@@ -16,10 +16,6 @@
             <p class="mt-3 text-3xl font-semibold">{{ orders.length }}</p>
           </div>
           <div class="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-4">
-            <p class="text-xs uppercase tracking-[0.2em] text-white/35">Cart</p>
-            <p class="mt-3 text-3xl font-semibold">{{ cartCount }}</p>
-          </div>
-          <div class="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-4">
             <p class="text-xs uppercase tracking-[0.2em] text-white/35">Inventory Value</p>
             <p class="mt-3 text-3xl font-semibold">{{ money(inventoryValue) }}</p>
           </div>
@@ -36,13 +32,6 @@
                 @click="workspaceTab = 'storefront'"
               >
                 หน้าร้าน
-              </button>
-              <button
-                class="border-b-2 px-6 py-5 text-lg font-semibold transition"
-                :class="workspaceTab === 'checkout' ? 'border-red-500 text-red-500' : 'border-transparent text-ink/55 hover:text-ink'"
-                @click="workspaceTab = 'checkout'"
-              >
-                เช็กเอาต์
               </button>
               <button
                 class="border-b-2 px-6 py-5 text-lg font-semibold transition"
@@ -99,111 +88,19 @@
                     <span class="chip">{{ product.category }}</span>
                   </div>
 
-                  <div class="mt-5 flex items-center justify-between">
-                    <div>
-                      <p class="text-xs uppercase tracking-[0.2em] text-white/35">Price</p>
-                      <p class="mt-1 text-xl font-semibold">{{ money(product.price) }}</p>
-                    </div>
-                    <button class="button-primary" @click="addBannerToCart(product)">
-                      <ShoppingBagIcon class="mr-2 h-4 w-4" />
-                      Add to Checkout
-                    </button>
+                  <div class="mt-5">
+                    <p class="text-xs uppercase tracking-[0.2em] text-white/35">Price</p>
+                    <p class="mt-1 text-xl font-semibold">{{ money(product.price) }}</p>
                   </div>
                 </div>
               </div>
-            </section>
-
-            <section v-else-if="workspaceTab === 'checkout'" class="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
-                <div class="panel-header">
-                  <div>
-                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">Checkout</p>
-                    <h2 class="mt-2 text-2xl font-semibold">Build a cart, then create an order.</h2>
-                  </div>
-                  <CreditCardIcon class="h-6 w-6 text-white/55" />
-                </div>
-
-                <label class="label">Assign User</label>
-                <select v-model="selectedProfileId" class="field" @change="onProfileChange">
-                  <option v-for="profile in profiles" :key="profile.id" :value="profile.id">
-                    {{ profile.name }} · {{ profile.role }}
-                  </option>
-                </select>
-
-                <div class="mt-5 space-y-3">
-                  <div
-                    v-for="item in cart"
-                    :key="item.productId"
-                    class="rounded-[1.5rem] border border-white/10 bg-white/[0.025] p-4"
-                  >
-                    <div class="flex items-start justify-between gap-4">
-                      <div>
-                        <p class="font-medium">{{ item.name }}</p>
-                        <p class="mt-1 text-sm text-white/45">{{ money(item.price) }} each</p>
-                      </div>
-                      <button class="text-sm text-white/45 transition hover:text-white" @click="removeCartItem(item.productId)">
-                        Remove
-                      </button>
-                    </div>
-
-                    <div class="mt-3 flex items-center gap-3">
-                      <input
-                        :value="item.quantity"
-                        class="field max-w-[110px]"
-                        min="1"
-                        type="number"
-                        @input="updateCart(item.productId, $event)"
-                      />
-                      <span class="text-sm text-white/45">Subtotal {{ money(item.quantity * item.price) }}</span>
-                    </div>
-                  </div>
-
-                  <div
-                    v-if="!cart.length"
-                    class="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-white/40"
-                  >
-                    Choose products from Banner Listing to begin checkout.
-                  </div>
-                </div>
-
-                <label class="label mt-5">Checkout Notes</label>
-                <textarea v-model="checkoutNotes" class="field min-h-[100px]" placeholder="Packaging requests, delivery notes, invoice memo"></textarea>
-
-                <div class="mt-5 flex items-center justify-between border-t border-white/10 pt-5">
-                  <div>
-                    <p class="text-xs uppercase tracking-[0.2em] text-white/35">Total</p>
-                    <p class="mt-1 text-2xl font-semibold">{{ money(cartTotal) }}</p>
-                  </div>
-                  <button class="button-primary" @click="submitCheckout">
-                    Complete Checkout
-                  </button>
-                </div>
-              </article>
-
-              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
-                <div class="panel-header">
-                  <div>
-                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">User</p>
-                    <h2 class="mt-2 text-2xl font-semibold">Selected profile for order flow.</h2>
-                  </div>
-                  <UserCircleIcon class="h-6 w-6 text-white/55" />
-                </div>
-
-                <div v-if="activeProfile" class="rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-5">
-                  <p class="text-xs uppercase tracking-[0.2em] text-white/35">{{ activeProfile.role }}</p>
-                  <p class="mt-2 text-2xl font-semibold">{{ activeProfile.name }}</p>
-                  <p class="mt-2 text-sm text-white/50">{{ activeProfile.email }}</p>
-                  <p class="mt-1 text-sm text-white/50">{{ activeProfile.phone }}</p>
-                  <p class="mt-4 text-sm leading-6 text-white/60">{{ activeProfile.address }}</p>
-                </div>
-              </article>
             </section>
 
             <section v-else-if="workspaceTab === 'warehouse'" class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
               <div class="panel-header">
                 <div>
                   <p class="text-xs uppercase tracking-[0.22em] text-white/40">Warehouse</p>
-                  <h2 class="mt-2 text-2xl font-semibold">Inventory reacts directly to checkout and CRUD.</h2>
+                  <h2 class="mt-2 text-2xl font-semibold">Inventory updates directly from product and order activity.</h2>
                 </div>
                 <ArchiveBoxIcon class="h-6 w-6 text-white/55" />
               </div>
@@ -477,15 +374,12 @@ export default {
     ArchiveBoxIcon,
     ChevronRightIcon,
     ClipboardDocumentListIcon,
-    CreditCardIcon,
     MegaphoneIcon,
-    ShoppingBagIcon,
     UserCircleIcon
   },
   data() {
     return {
       store: null,
-      checkoutNotes: "",
       selectedProfileId: null,
       workspaceTab: "storefront",
       profileForm: profileDefaults(),
@@ -513,17 +407,8 @@ export default {
     orders() {
       return this.store?.orders || [];
     },
-    cart() {
-      return this.store?.cart || [];
-    },
     featuredProducts() {
       return this.store?.featuredProducts || [];
-    },
-    cartCount() {
-      return this.store?.cartCount || 0;
-    },
-    cartTotal() {
-      return this.store?.cartTotal || 0;
     },
     inventoryValue() {
       return this.store?.inventoryValue || 0;
@@ -573,23 +458,6 @@ export default {
     onProfileChange() {
       this.store.selectProfile(this.selectedProfileId);
       this.profileForm = this.activeProfile ? { ...this.activeProfile } : profileDefaults();
-    },
-    addBannerToCart(product) {
-      this.store.addToCart(product);
-      this.workspaceTab = "checkout";
-    },
-    updateCart(productId, event) {
-      this.store.updateCartQuantity(productId, event.target.value);
-    },
-    removeCartItem(productId) {
-      this.store.removeFromCart(productId);
-    },
-    async submitCheckout() {
-      const success = await this.store.checkout(this.checkoutNotes);
-      if (success) {
-        this.checkoutNotes = "";
-        this.workspaceTab = "orders";
-      }
     },
     async submitProfile() {
       await this.store.saveProfile({ ...this.profileForm });
