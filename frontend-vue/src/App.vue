@@ -49,13 +49,6 @@
               </button>
               <button
                 class="border-b-2 px-6 py-5 text-lg font-semibold transition"
-                :class="workspaceTab === 'provider' ? 'border-red-500 text-red-500' : 'border-transparent text-ink/55 hover:text-ink'"
-                @click="workspaceTab = 'provider'"
-              >
-                ร้านค้า
-              </button>
-              <button
-                class="border-b-2 px-6 py-5 text-lg font-semibold transition"
                 :class="workspaceTab === 'user' ? 'border-red-500 text-red-500' : 'border-transparent text-ink/55 hover:text-ink'"
                 @click="workspaceTab = 'user'"
               >
@@ -65,35 +58,105 @@
           </div>
 
           <div class="p-6">
-            <section v-if="workspaceTab === 'storefront'" class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
-              <div class="panel-header">
-                <div>
-                  <p class="text-xs uppercase tracking-[0.22em] text-white/40">Banner Listing</p>
-                  <h2 class="mt-2 text-2xl font-semibold">Featured products drive the storefront.</h2>
+            <section v-if="workspaceTab === 'storefront'" class="space-y-6">
+              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
+                <div class="panel-header">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">Banner Listing</p>
+                    <h2 class="mt-2 text-2xl font-semibold">Featured products drive the storefront.</h2>
+                  </div>
+                  <MegaphoneIcon class="h-6 w-6 text-white/55" />
                 </div>
-                <MegaphoneIcon class="h-6 w-6 text-white/55" />
-              </div>
 
-              <div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                <div
-                  v-for="product in featuredProducts"
-                  :key="product.id"
-                  class="rounded-[1.8rem] border border-white/10 bg-black/20 p-5"
-                >
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
-                      <p class="text-lg font-medium">{{ product.name }}</p>
-                      <p class="mt-1 text-sm text-white/50">{{ product.description }}</p>
+                <div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                  <div
+                    v-for="product in featuredProducts"
+                    :key="product.id"
+                    class="rounded-[1.8rem] border border-white/10 bg-black/20 p-5"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <p class="text-lg font-medium">{{ product.name }}</p>
+                        <p class="mt-1 text-sm text-white/50">{{ product.description }}</p>
+                      </div>
+                      <span class="chip">{{ product.category }}</span>
                     </div>
-                    <span class="chip">{{ product.category }}</span>
-                  </div>
 
-                  <div class="mt-5">
-                    <p class="text-xs uppercase tracking-[0.2em] text-white/35">Price</p>
-                    <p class="mt-1 text-xl font-semibold">{{ money(product.price) }}</p>
+                    <div class="mt-5">
+                      <p class="text-xs uppercase tracking-[0.2em] text-white/35">Price</p>
+                      <p class="mt-1 text-xl font-semibold">{{ money(product.price) }}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </article>
+
+              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
+                <div class="panel-header">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">Store Directory</p>
+                    <h2 class="mt-2 text-2xl font-semibold">Manage storefront shops from the same workspace.</h2>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <button class="button-primary" type="button" @click="openShopModal">Create Shop</button>
+                    <ClipboardDocumentListIcon class="h-6 w-6 text-white/55" />
+                  </div>
+                </div>
+
+                <div class="mb-4 flex flex-wrap items-end gap-4">
+                  <div class="min-w-[260px] flex-1">
+                    <label class="label">Owner Provider</label>
+                    <select v-model="shopForm.provider_id" class="field">
+                      <option value="" disabled>Select provider</option>
+                      <option v-for="provider in providers" :key="provider.provider_id" :value="provider.provider_id">
+                        {{ provider.provider_name }} · {{ provider.shop_count || 0 }} shops
+                      </option>
+                    </select>
+                  </div>
+                  <div v-if="shopMessage" class="rounded-[1.2rem] border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+                    {{ shopMessage }}
+                  </div>
+                </div>
+
+                <div v-if="selectedProviderInfo && selectedProviderInfo.shop_names?.length" class="mb-5 flex flex-wrap gap-2">
+                  <span
+                    v-for="shopName in selectedProviderInfo.shop_names"
+                    :key="shopName"
+                    class="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60"
+                  >
+                    {{ shopName }}
+                  </span>
+                </div>
+
+                <div v-if="selectedProviderShops.length" class="space-y-3">
+                  <div
+                    v-for="shop in selectedProviderShops"
+                    :key="shop.provider_id"
+                    class="rounded-[1.5rem] border border-white/10 bg-white/[0.025] px-4 py-4"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <p class="font-medium">{{ shop.provider_name }}</p>
+                        <p class="mt-1 text-sm text-white/45">{{ shop.provider_id }}</p>
+                        <p class="mt-2 text-xs uppercase tracking-[0.16em] text-white/35">{{ shop.product_count || 0 }} products in this shop</p>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="chip">store</span>
+                        <button
+                          v-if="shop.owner_provider_id"
+                          class="rounded-full border border-red-400/20 bg-red-400/10 px-3 py-1 text-xs text-red-200 transition hover:bg-red-400/20"
+                          type="button"
+                          @click="removeShop(shop)"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-white/40">
+                  No shops loaded for this provider yet.
+                </div>
+              </article>
             </section>
 
             <section v-else-if="workspaceTab === 'warehouse'" class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
@@ -176,96 +239,6 @@
               </div>
             </section>
 
-            <section v-else-if="workspaceTab === 'provider'" class="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
-                <div class="panel-header">
-                  <div>
-                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">Provider</p>
-                    <h2 class="mt-2 text-2xl font-semibold">➕ Add New Shop</h2>
-                  </div>
-                  <ArchiveBoxIcon class="h-6 w-6 text-white/55" />
-                </div>
-
-                <form class="space-y-4" @submit.prevent="submitShop">
-                  <div>
-                    <label class="label">Owner Provider</label>
-                    <select v-model="shopForm.provider_id" class="field" required>
-                      <option value="" disabled>Select provider</option>
-                      <option v-for="provider in providers" :key="provider.provider_id" :value="provider.provider_id">
-                        {{ provider.provider_name }} · {{ provider.shop_count || 0 }} shops
-                      </option>
-                    </select>
-                    <p class="mt-2 text-sm text-white/45">Use this dropdown to choose the main provider account that will own the new shop.</p>
-                    <div v-if="selectedProviderInfo && selectedProviderInfo.shop_names?.length" class="mt-3 flex flex-wrap gap-2">
-                      <span
-                        v-for="shopName in selectedProviderInfo.shop_names"
-                        :key="shopName"
-                        class="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60"
-                      >
-                        {{ shopName }}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <label class="label">Shop Name *</label>
-                    <input v-model="shopForm.name" class="field" type="text" placeholder="e.g., Kanoon Footwear" required />
-                  </div>
-                  <div>
-                    <label class="label">Shop Email</label>
-                    <input v-model="shopForm.email" class="field" type="email" placeholder="optional-shop@email.com" />
-                  </div>
-                  <div class="flex flex-wrap gap-3">
-                    <button class="button-primary" type="submit">Create Shop</button>
-                    <button class="button-secondary" type="button" @click="resetShopForm">Reset</button>
-                  </div>
-                </form>
-              </article>
-
-              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
-                <div class="panel-header">
-                  <div>
-                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">Shop Directory</p>
-                    <h2 class="mt-2 text-2xl font-semibold">Current shops from the user storefront.</h2>
-                  </div>
-                  <ClipboardDocumentListIcon class="h-6 w-6 text-white/55" />
-                </div>
-
-                <div v-if="shopMessage" class="mb-4 rounded-[1.2rem] border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
-                  {{ shopMessage }}
-                </div>
-
-                <div v-if="selectedProviderShops.length" class="space-y-3">
-                  <div
-                    v-for="shop in selectedProviderShops"
-                    :key="shop.provider_id"
-                    class="rounded-[1.5rem] border border-white/10 bg-white/[0.025] px-4 py-4"
-                  >
-                    <div class="flex items-start justify-between gap-3">
-                      <div>
-                        <p class="font-medium">{{ shop.provider_name }}</p>
-                        <p class="mt-1 text-sm text-white/45">{{ shop.provider_id }}</p>
-                        <p class="mt-2 text-xs uppercase tracking-[0.16em] text-white/35">{{ shop.product_count || 0 }} products in this shop</p>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <span class="chip">store</span>
-                        <button
-                          v-if="shop.owner_provider_id"
-                          class="rounded-full border border-red-400/20 bg-red-400/10 px-3 py-1 text-xs text-red-200 transition hover:bg-red-400/20"
-                          type="button"
-                          @click="removeShop(shop)"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-white/40">
-                  No shops loaded for this provider yet.
-                </div>
-              </article>
-            </section>
-
             <section v-else class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
               <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
                 <div class="panel-header">
@@ -332,6 +305,46 @@
         {{ errorMessage }}
       </div>
       <div v-else class="panel p-12 text-center text-white/60">Connecting to live database...</div>
+
+      <div v-if="showShopModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-8 backdrop-blur-sm" @click.self="closeShopModal">
+        <div class="w-full max-w-2xl rounded-[2rem] border border-white/10 bg-[#161616] p-6 shadow-2xl">
+          <div class="panel-header">
+            <div>
+              <p class="text-xs uppercase tracking-[0.22em] text-white/40">Store Setup</p>
+              <h2 class="mt-2 text-2xl font-semibold">➕ Create Shop</h2>
+            </div>
+            <button class="rounded-full border border-white/10 px-4 py-2 text-sm text-white/65 transition hover:text-white" type="button" @click="closeShopModal">
+              Close
+            </button>
+          </div>
+
+          <form class="mt-6 space-y-4" @submit.prevent="submitShop">
+            <div>
+              <label class="label">Owner Provider</label>
+              <select v-model="shopForm.provider_id" class="field" required>
+                <option value="" disabled>Select provider</option>
+                <option v-for="provider in providers" :key="provider.provider_id" :value="provider.provider_id">
+                  {{ provider.provider_name }} · {{ provider.shop_count || 0 }} shops
+                </option>
+              </select>
+              <p class="mt-2 text-sm text-white/45">Use this dropdown to choose the main provider account that will own the new shop.</p>
+            </div>
+            <div>
+              <label class="label">Shop Name *</label>
+              <input v-model="shopForm.name" class="field" type="text" placeholder="e.g., Kanoon Footwear" required />
+            </div>
+            <div>
+              <label class="label">Shop Email</label>
+              <input v-model="shopForm.email" class="field" type="email" placeholder="optional-shop@email.com" />
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <button class="button-primary" type="submit">Create Shop</button>
+              <button class="button-secondary" type="button" @click="closeShopModal">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -385,7 +398,8 @@ export default {
       profileForm: profileDefaults(),
       providers: [],
       shopForm: shopDefaults(),
-      shopMessage: ""
+      shopMessage: "",
+      showShopModal: false
     };
   },
   computed: {
@@ -480,6 +494,16 @@ export default {
       this.shopForm = shopDefaults(this.providers[0]?.provider_id || "");
       this.shopMessage = "";
     },
+    openShopModal() {
+      if (!this.shopForm.provider_id) {
+        this.shopForm.provider_id = this.providers[0]?.provider_id || "";
+      }
+      this.showShopModal = true;
+    },
+    closeShopModal() {
+      this.showShopModal = false;
+      this.resetShopForm();
+    },
     async submitShop() {
       await studioApi.createProviderShop(this.shopForm.provider_id, {
         name: this.shopForm.name,
@@ -488,6 +512,7 @@ export default {
       const createdName = this.shopForm.name;
       this.resetShopForm();
       this.shopMessage = `Created shop: ${createdName}`;
+      this.showShopModal = false;
       await this.loadProviders();
       await this.store.reloadAll();
     },
