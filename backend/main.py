@@ -500,6 +500,7 @@ async def list_provider_shops(owner_provider_id: str) -> List[dict]:
             "provider_id": owner_provider_id,
             "provider_name": owner.get("username") or owner.get("email", "").split("@")[0] or owner_provider_id,
             "email": owner.get("email", ""),
+            "logo_url": owner.get("logo_url") or owner.get("image_url") or "",
             "is_primary": True,
             "owner_provider_id": None,
         })
@@ -519,6 +520,7 @@ async def list_provider_shops(owner_provider_id: str) -> List[dict]:
             "provider_id": shop_id,
             "provider_name": shop.get("username") or shop.get("email", "").split("@")[0] or shop_id,
             "email": shop.get("email", ""),
+            "logo_url": shop.get("logo_url") or shop.get("image_url") or "",
             "is_primary": False,
             "owner_provider_id": owner_provider_id,
         })
@@ -919,6 +921,7 @@ async def admin_provider_list(current_user: str = Depends(get_current_user)):
                 "provider_id": provider_id,
                 "provider_name": provider.get("username") or provider.get("email", "").split("@")[0] or provider_id,
                 "email": provider.get("email", ""),
+                "logo_url": provider.get("logo_url") or provider.get("image_url") or "",
                 "shop_count": len(detailed_shops),
                 "shop_names": shop_names,
                 "shops": detailed_shops,

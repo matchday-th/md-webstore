@@ -117,14 +117,34 @@
                   </div>
                 </div>
 
-                <div v-if="selectedProviderInfo && selectedProviderInfo.shop_names?.length" class="mb-5 flex flex-wrap gap-2">
-                  <span
-                    v-for="shopName in selectedProviderInfo.shop_names"
-                    :key="shopName"
-                    class="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60"
-                  >
-                    {{ shopName }}
-                  </span>
+                <div v-if="selectedProviderInfo" class="mb-5 rounded-[1.5rem] border border-white/10 bg-white/[0.025] p-4">
+                  <div class="flex items-center gap-4">
+                    <img
+                      v-if="selectedProviderInfo.logo_url"
+                      :src="selectedProviderInfo.logo_url"
+                      :alt="selectedProviderInfo.provider_name"
+                      class="h-14 w-14 rounded-2xl object-cover"
+                    />
+                    <div
+                      v-else
+                      class="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-black/20 text-lg font-semibold text-white/75"
+                    >
+                      {{ providerInitial(selectedProviderInfo.provider_name) }}
+                    </div>
+                    <div>
+                      <p class="font-medium text-white">{{ selectedProviderInfo.provider_name }}</p>
+                      <p class="mt-1 text-sm text-white/45">{{ selectedProviderInfo.shop_count || 0 }} shops</p>
+                    </div>
+                  </div>
+                  <div v-if="selectedProviderInfo.shop_names?.length" class="mt-4 flex flex-wrap gap-2">
+                    <span
+                      v-for="shopName in selectedProviderInfo.shop_names"
+                      :key="shopName"
+                      class="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60"
+                    >
+                      {{ shopName }}
+                    </span>
+                  </div>
                 </div>
 
                 <div v-if="selectedProviderShops.length" class="space-y-3">
@@ -134,10 +154,24 @@
                     class="rounded-[1.5rem] border border-white/10 bg-white/[0.025] px-4 py-4"
                   >
                     <div class="flex items-start justify-between gap-3">
-                      <div>
-                        <p class="font-medium">{{ shop.provider_name }}</p>
-                        <p class="mt-1 text-sm text-white/45">{{ shop.provider_id }}</p>
-                        <p class="mt-2 text-xs uppercase tracking-[0.16em] text-white/35">{{ shop.product_count || 0 }} products in this shop</p>
+                      <div class="flex items-center gap-4">
+                        <img
+                          v-if="shop.logo_url"
+                          :src="shop.logo_url"
+                          :alt="shop.provider_name"
+                          class="h-14 w-14 rounded-2xl object-cover"
+                        />
+                        <div
+                          v-else
+                          class="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-black/20 text-lg font-semibold text-white/75"
+                        >
+                          {{ providerInitial(shop.provider_name) }}
+                        </div>
+                        <div>
+                          <p class="font-medium">{{ shop.provider_name }}</p>
+                          <p class="mt-1 text-sm text-white/45">{{ shop.provider_id }}</p>
+                          <p class="mt-2 text-xs uppercase tracking-[0.16em] text-white/35">{{ shop.product_count || 0 }} products in this shop</p>
+                        </div>
                       </div>
                       <div class="flex items-center gap-2">
                         <span class="chip">store</span>
@@ -608,6 +642,9 @@ export default {
     prettyLabel(value) {
       if (!value) return "-";
       return String(value).replaceAll("_", " ").replace(/\w/g, (char) => char.toUpperCase());
+    },
+    providerInitial(value) {
+      return String(value || "S").trim().charAt(0).toUpperCase() || "S";
     },
     prettyPaymentStatus(value) {
       if (!value) return "-";
