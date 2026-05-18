@@ -219,6 +219,7 @@ def serialize_order(order: dict, user_lookup: dict, product_lookup: dict) -> dic
             "name": item.get("name") or product.get("name", "Unknown product"),
             "quantity": int(item.get("quantity", 0) or 0),
             "price": float(item.get("price_at_purchase", 0) or 0),
+            "lineTotal": round(int(item.get("quantity", 0) or 0) * float(item.get("price_at_purchase", 0) or 0), 2),
             "providerId": provider_id or None,
             "providerName": (
                 product.get("provider_name")
@@ -226,16 +227,30 @@ def serialize_order(order: dict, user_lookup: dict, product_lookup: dict) -> dic
                 or provider_id
                 or "Unknown shop"
             ),
+            "sku": product.get("sku", "") or "",
+            "category": product.get("category", "") or "",
+            "image_url": product.get("image_url", "") or "",
         })
 
     user_id = order.get("user_id")
     profile = user_lookup.get(str(user_id)) if user_id else None
 
+    pricing = order.get("pricing") or {}
+    billing = order.get("billing") or {}
+
     return {
         "id": str(order["_id"]),
         "profile_id": str(user_id) if user_id else None,
         "user_name": order.get("user_name") or (profile.get("name") if profile else "Unknown user"),
+        "customer_email": (profile.get("email") if profile else "") or order.get("customer_email", "") or "",
         "status": normalize_order_status(order.get("status")).title(),
+        "payment_status": str(order.get("payment_status", "") or "").lower(),
+        "invoice_number": billing.get("invoice_number") or "",
+        "created_at": order.get("created_at").isoformat() if order.get("created_at") else None,
+        "updated_at": order.get("updated_at").isoformat() if order.get("updated_at") else None,
+        "payment_method": order.get("payment_method", "") or "",
+        "shipping_address": order.get("shipping_address", "") or "",
+        "pricing": pricing,
         "total": float(order.get("total_amount", 0) or 0),
         "items": items,
         "notes": order.get("notes", "") or "",
