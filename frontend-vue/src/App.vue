@@ -200,7 +200,17 @@
                 <ClipboardDocumentListIcon class="h-6 w-6 text-white/55" />
               </div>
 
-              <div v-if="orders.length" class="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/[0.025]">
+              <div class="mb-5 max-w-sm">
+                <label class="label">Provider Filter</label>
+                <select v-model="selectedOrderProvider" class="field">
+                  <option value="">แสดงทั้งหมด</option>
+                  <option v-for="provider in providers" :key="provider.provider_id" :value="provider.provider_id">
+                    {{ provider.provider_name }}
+                  </option>
+                </select>
+              </div>
+
+              <div v-if="filteredOrders.length" class="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/[0.025]">
                 <div class="overflow-x-auto">
                   <table class="min-w-full divide-y divide-white/10 text-sm">
                     <thead class="bg-white/[0.05] text-left text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
@@ -217,7 +227,7 @@
                     </thead>
                     <tbody class="divide-y divide-white/5 bg-transparent">
                       <tr
-                        v-for="(order, index) in orders"
+                        v-for="(order, index) in filteredOrders"
                         :key="order.id"
                         class="transition hover:bg-white/[0.03]"
                       >
@@ -249,7 +259,7 @@
                 </div>
               </div>
               <div v-else class="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-white/40">
-                No sales history yet.
+                No sales history for this filter.
               </div>
             </section>
 
@@ -514,7 +524,8 @@ export default {
       shopForm: shopDefaults(),
       shopMessage: "",
       showShopModal: false,
-      currentSalesBill: null
+      currentSalesBill: null,
+      selectedOrderProvider: ""
     };
   },
   computed: {
@@ -535,6 +546,14 @@ export default {
     },
     orders() {
       return this.store?.orders || [];
+    },
+    filteredOrders() {
+      if (!this.selectedOrderProvider) {
+        return this.orders;
+      }
+      return this.orders.filter((order) =>
+        (order.items || []).some((item) => item.providerId === this.selectedOrderProvider)
+      );
     },
     featuredProducts() {
       return this.store?.featuredProducts || [];
