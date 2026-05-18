@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ecommerce-system
+    runtime: docker
+    plan: free
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_NAME
+        value: ecommerce_db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MONGODB_URL
+        sync: false

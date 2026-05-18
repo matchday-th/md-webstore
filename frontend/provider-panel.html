@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Panel - Add Products & Services</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["Prompt", "ui-sans-serif", "system-ui", "sans-serif"]
+                    },
+                    boxShadow: {
+                        panel: "0 24px 80px rgba(0, 0, 0, 0.08)"
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,0.92), rgba(255,255,255,0) 28%),
+                radial-gradient(circle at bottom right, rgba(255,255,255,0.72), rgba(255,255,255,0) 24%),
+                linear-gradient(180deg, #fafafa 0%, #f1f1f1 100%);
+            color: #0a0a0a;
+        }
+
+        .tab-button {
+            transition: all 0.2s ease;
+        }
+
+        .tab-button.active {
+            background: #0a0a0a;
+            color: #ffffff;
+            border-color: #0a0a0a;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #111111;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d4d4d4;
+            border-radius: 16px;
+            font-size: 15px;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.88);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #111111;
+            box-shadow: 0 0 0 4px rgba(10, 10, 10, 0.08);
+            background: #ffffff;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 10, 0.58);
+            z-index: 1000;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.97);
+            width: 100%;
+            max-width: 640px;
+            border-radius: 28px;
+            padding: 32px;
+            box-shadow: 0 28px 90px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid rgba(10, 10, 10, 0.08);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .close-button {
+            border: none;
+            background: transparent;
+            width: 40px;
+            height: 40px;
+            border-radius: 9999px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #737373;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+        .close-button:hover {
+            color: #111111;
+            background: #f5f5f5;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .status-badge.pending {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .status-badge.cancel,
+        .status-badge.cancelled,
+        .status-badge.canceled,
+        .status-badge.rejected,
+        .status-badge.failed {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .status-badge.paid,
+        .status-badge.completed,
+        .status-badge.approved,
+        .status-badge.success,
+        .status-badge.shipping,
+        .status-badge.delivered {
+            background: #ecfdf5;
+            color: #15803d;
+        }
+
+        .status-badge.awaiting,
+        .status-badge.awaiting_slip_verification,
+        .status-badge.pending_payment,
+        .status-badge.waiting {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+    </style>
+</head>
+<body>
+    <div class="mx-auto min-h-screen max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <header class="relative mb-8 overflow-hidden rounded-[32px] border border-black/10 bg-black text-white shadow-panel">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_35%)]"></div>
+            <div class="relative flex flex-col gap-6 px-6 py-7 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:px-10">
+                <div class="max-w-2xl">
+                    <div class="mb-4 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1 text-xs uppercase tracking-[0.24em] text-white/70">Provider Workspace</div>
+                    <h1 id="pageTitle" class="text-3xl font-semibold tracking-tight sm:text-4xl">🏪 Provider Panel</h1>
+                    <p id="pageSubtitle" class="mt-3 max-w-xl text-sm text-white/72 sm:text-base">Manage your products and services</p>
+                </div>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div class="rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur">
+                        <select id="languageSwitcher" class="min-w-[124px] rounded-full border border-transparent bg-transparent px-4 py-2 text-sm font-medium text-white focus:border-white/30 focus:outline-none focus:ring-0">
+                            <option value="en" class="text-black">English</option>
+                            <option value="th" class="text-black">ไทย</option>
+                        </select>
+                    </div>
+                    <button onclick="handleLogout()" id="logoutButton" class="rounded-full border border-white/15 bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-neutral-100">🚪 Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <div id="message" class="mb-6"></div>
+
+        <div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-[28px] border border-black/10 bg-white/85 p-6 shadow-panel backdrop-blur">
+                <h3 id="statProductsLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">📦 My Products</h3>
+                <div class="mt-5 text-4xl font-semibold tracking-tight text-black" id="productCount">0</div>
+                <p class="mt-3 text-sm text-neutral-500">Published items under your provider scope.</p>
+            </div>
+            <div class="rounded-[28px] border border-black/10 bg-white/85 p-6 shadow-panel backdrop-blur">
+                <h3 id="statStockLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">📂 Categories</h3>
+                <div class="mt-5 text-4xl font-semibold tracking-tight text-black" id="stockCount">0</div>
+                <p class="mt-3 text-sm text-neutral-500">Unique categories across all assigned products.</p>
+            </div>
+            <div class="rounded-[28px] border border-black/10 bg-white/85 p-6 shadow-panel backdrop-blur">
+                <h3 id="statRevenueLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">💰 Revenue</h3>
+                <div class="mt-5 text-4xl font-semibold tracking-tight text-black" id="revenue">$0</div>
+                <p class="mt-3 text-sm text-neutral-500">Order value collected from confirmed provider sales.</p>
+            </div>
+            <div class="rounded-[28px] border border-black/10 bg-white/85 p-6 shadow-panel backdrop-blur">
+                <h3 id="statOrdersLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">📋 Orders</h3>
+                <div class="mt-5 text-4xl font-semibold tracking-tight text-black" id="orderCount">0</div>
+                <p class="mt-3 text-sm text-neutral-500">Total orders connected to your product catalog.</p>
+            </div>
+        </div>
+
+        <div class="mb-6 inline-flex w-full flex-col gap-3 rounded-[28px] border border-black/10 bg-white/85 p-3 shadow-panel backdrop-blur sm:w-auto sm:flex-row">
+            <button class="tab-button rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-600 hover:border-black hover:text-black active" onclick="switchTab('inventory-hub', event)" id="tabInventoryHub">
+                📦 Inventory
+            </button>
+            <button class="tab-button rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-600 hover:border-black hover:text-black" onclick="switchTab('sales-history', event)" id="tabSalesHistory">
+                🧾 Sales History
+            </button>
+            <button class="tab-button rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-600 hover:border-black hover:text-black" onclick="switchTab('restock-history', event)" id="tabRestockHistory">
+                📥 Restock History
+            </button>
+            <button class="tab-button rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-600 hover:border-black hover:text-black" onclick="switchTab('slip-review', event)" id="tabSlipReview">
+                🧾 Slip Review
+            </button>
+        </div>
+
+        <div id="inventory-hub" class="tab-content active">
+            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
+                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Inventory Hub</p>
+                        <h2 id="inventoryHubTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">📦 Inventory Workspace</h2>
+                    </div>
+                    <p class="max-w-md text-sm text-neutral-500">Open quick actions for new products and stock refills, then review your full catalog below.</p>
+                </div>
+
+                <div class="mb-8 rounded-[28px] border border-black/10 bg-neutral-50 p-5">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Shop Assignment</p>
+                            <h3 id="shopStudioTitle" class="mt-2 text-xl font-semibold text-black">🏬 Select Shop Before Adding Product</h3>
+                        </div>
+                        <span id="shopCountBadge" class="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-neutral-600">0 shops</span>
+                    </div>
+                    <div class="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                        <div>
+                            <label id="shopSelectLabel">Add product to shop *</label>
+                            <select name="provider_id" id="shopSelect" required>
+                                <option value="">Loading shops...</option>
+                            </select>
+                        </div>
+                        <div class="text-sm text-neutral-500">Choose the shop first, then use the action buttons below.</div>
+                    </div>
+                </div>
+
+                <div class="mb-8 grid gap-4 lg:grid-cols-2">
+                    <button type="button" class="rounded-[28px] border border-black/10 bg-white px-6 py-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-black" onclick="openProductModal()">
+                        <div class="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Quick Action</div>
+                        <div id="openAddProductButton" class="mt-2 text-xl font-semibold text-black">➕ Create Product</div>
+                        <p class="mt-2 text-sm text-neutral-500">Open a popup to create a new product under the selected shop.</p>
+                    </button>
+                    <button type="button" class="rounded-[28px] border border-black/10 bg-white px-6 py-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-black" onclick="openRestockModal()">
+                        <div class="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Quick Action</div>
+                        <div id="openRestockButton" class="mt-2 text-xl font-semibold text-black">📦 Update Stock</div>
+                        <p class="mt-2 text-sm text-neutral-500">Open a popup to refill stock and log the reason immediately.</p>
+                    </button>
+                </div>
+
+                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Inventory Table</p>
+                        <h2 id="myProductsTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">📋 My Products</h2>
+                    </div>
+                    <p class="max-w-md text-sm text-neutral-500">Review, edit, and prune everything in your active product list from one minimal control surface.</p>
+                </div>
+                <div class="mb-6 grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label id="filterCategoryLabel">Filter by Category</label>
+                        <select id="categoryFilter" onchange="loadMyProducts()">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label id="filterShopLabel">Filter by Shop</label>
+                        <select id="shopFilter" onchange="loadMyProducts()">
+                            <option value="">All Shops</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="myProductsTable">
+                    <p class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-10 text-center text-neutral-500">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="sales-history" class="tab-content">
+            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
+                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Sales Ledger</p>
+                        <h2 id="salesHistoryTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">🧾 Sales History</h2>
+                    </div>
+                    <p class="max-w-md text-sm text-neutral-500">Review sold items by exact day or summarize by month and year.</p>
+                </div>
+                <div class="mb-6 grid gap-4 lg:grid-cols-4">
+                    <div>
+                        <label id="salesDateLabel">Select Day</label>
+                        <input type="date" id="salesDayFilter">
+                    </div>
+                    <div>
+                        <label id="salesMonthLabel">Month</label>
+                        <select id="salesMonthFilter"></select>
+                    </div>
+                    <div>
+                        <label id="salesYearLabel">Year</label>
+                        <select id="salesYearFilter"></select>
+                    </div>
+                    <div>
+                        <label id="salesCategoryLabel">Category</label>
+                        <select id="salesCategoryFilter"></select>
+                    </div>
+                </div>
+                <div class="mb-6 flex flex-wrap gap-3">
+                    <button type="button" class="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" onclick="loadSalesHistory()">Load Sales</button>
+                    <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="resetHistoryFilters('sales')">Reset Filters</button>
+                </div>
+                <div id="salesHistoryTable">
+                    <p class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-10 text-center text-neutral-500">No sales loaded yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="restock-history" class="tab-content">
+            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
+                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Inventory Audit</p>
+                        <h2 id="restockHistoryTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">📥 Restock History</h2>
+                    </div>
+                    <p class="max-w-md text-sm text-neutral-500">Track every stock refill with quantity, stock delta, and reason.</p>
+                </div>
+                <div class="mb-6 grid gap-4 lg:grid-cols-4">
+                    <div>
+                        <label id="restockDateLabel">Select Day</label>
+                        <input type="date" id="restockDayFilter">
+                    </div>
+                    <div>
+                        <label id="restockMonthLabel">Month</label>
+                        <select id="restockMonthFilter"></select>
+                    </div>
+                    <div>
+                        <label id="restockYearLabel">Year</label>
+                        <select id="restockYearFilter"></select>
+                    </div>
+                    <div>
+                        <label id="restockCategoryLabel">Category</label>
+                        <select id="restockCategoryFilter"></select>
+                    </div>
+                </div>
+                <div class="mb-6 flex flex-wrap gap-3">
+                    <button type="button" class="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" onclick="loadRestockHistory()">Load Restocks</button>
+                    <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="resetHistoryFilters('restock')">Reset Filters</button>
+                </div>
+                <div id="restockHistoryTable">
+                    <p class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-10 text-center text-neutral-500">No restock history loaded yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="slip-review" class="tab-content">
+            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
+                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Payment Control</p>
+                        <h2 id="slipReviewTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">🧾 Slip Review</h2>
+                    </div>
+                    <p class="max-w-md text-sm text-neutral-500">Review transfer slips from customers and decide whether to approve or reject them.</p>
+                </div>
+                <div id="slipReviewTable">
+                    <p class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-10 text-center text-neutral-500">No slips loaded yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal" onclick="handleModalBackdrop(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Product Detail</p>
+                    <h2 id="editModalTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">✏️ Edit Product</h2>
+                </div>
+                <button type="button" class="close-button" onclick="closeEditModal()">&times;</button>
+            </div>
+
+            <form id="editProductForm" onsubmit="handleEditProduct(event)">
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <div class="form-group sm:col-span-2">
+                        <label id="editNameLabel">Product Name *</label>
+                        <input type="text" id="editName" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label id="editSkuLabel">SKU *</label>
+                        <input type="text" id="editSku" name="sku" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label id="editCategoryLabel">Category *</label>
+                        <select id="editCategory" name="category" required>
+                            <option value="" data-category-key="selectCategory">Select Category</option>
+                            <option value="Footwear" data-category-key="footwear">Footwear</option>
+                            <option value="Apparel" data-category-key="apparel">Apparel</option>
+                            <option value="Accessories" data-category-key="accessories">Accessories</option>
+                            <option value="Electronics" data-category-key="electronics">Electronics</option>
+                            <option value="Other" data-category-key="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label id="editPriceLabel">Price per Unit ($) *</label>
+                        <input type="number" id="editPrice" name="price" required step="0.01" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label id="editStockLabel">Stock *</label>
+                        <input type="number" id="editStock" name="stock" required min="0">
+                    </div>
+
+                    <div class="form-group sm:col-span-2">
+                        <label id="editImageLabel">Product Image</label>
+                        <div class="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+                            <div class="space-y-3">
+                                <input type="text" id="editImageUrl" name="image_url" placeholder="https://example.com/product.jpg">
+                                <input type="file" id="editImageFile" accept="image/*">
+                                <p class="text-xs text-neutral-500">Paste a new image URL or choose a new image file.</p>
+                            </div>
+                            <div class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 p-4">
+                                <img id="editImagePreview" src="" alt="Preview" class="hidden h-40 w-full rounded-2xl object-cover">
+                                <div id="editImagePlaceholder" class="flex h-40 items-center justify-center rounded-2xl bg-white text-sm text-neutral-400">No image selected</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group sm:col-span-2">
+                        <label id="editDescriptionLabel">Description</label>
+                        <textarea id="editDescription" name="description"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-actions mt-3 border-t border-black/10 pt-6">
+                    <button type="button" class="rounded-full border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100" onclick="deleteProduct()" id="deleteButton">Delete</button>
+                    <div class="flex flex-1 justify-end gap-3">
+                        <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="closeEditModal()" id="cancelButton">Cancel</button>
+                        <button type="submit" class="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" id="saveButton">Save Changes</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="salesBillModal" class="modal" onclick="handleSalesBillBackdrop(event)">
+        <div class="modal-content" style="max-width: 1320px; padding: 0; overflow: hidden;">
+            <div class="modal-header px-8 pt-8">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Bill Detail</p>
+                    <h2 id="salesBillModalTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">🧾 Sales Bill</h2>
+                </div>
+                <button type="button" class="close-button" onclick="closeSalesBillModal()">&times;</button>
+            </div>
+            <div id="salesBillModalBody" class="grid gap-0 lg:grid-cols-[1.2fr_0.9fr]">
+                <div class="border-t border-black/10 px-8 py-8">
+                    <p class="text-neutral-500">Loading bill...</p>
+                </div>
+                <div class="border-t border-black/10 bg-neutral-50 px-8 py-8">
+                    <p class="text-neutral-500">Loading payment history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="productModal" class="modal" onclick="handleProductModalBackdrop(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Catalog Management</p>
+                    <h2 id="addProductTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">➕ Add New Product</h2>
+                </div>
+                <button type="button" class="close-button" onclick="closeProductModal()">&times;</button>
+            </div>
+            <form id="addProductForm" onsubmit="handleAddProduct(event)">
+                <input type="hidden" name="provider_id" id="modalProviderId">
+                <div class="grid gap-5 lg:grid-cols-2">
+                    <div class="form-group">
+                        <label id="addNameLabel">Product Name *</label>
+                        <input type="text" name="name" required placeholder="e.g., Nike Air Max">
+                    </div>
+
+                    <div class="form-group">
+                        <label id="addSkuLabel">SKU (Stock Keeping Unit) *</label>
+                        <input type="text" name="sku" required placeholder="e.g., SKU-NIKE-12345">
+                    </div>
+
+                    <div class="form-group">
+                        <label id="addCategoryLabel">Category *</label>
+                        <select name="category" required>
+                            <option value="" data-category-key="selectCategory">Select Category</option>
+                            <option value="Footwear" data-category-key="footwear">Footwear</option>
+                            <option value="Apparel" data-category-key="apparel">Apparel</option>
+                            <option value="Accessories" data-category-key="accessories">Accessories</option>
+                            <option value="Electronics" data-category-key="electronics">Electronics</option>
+                            <option value="Other" data-category-key="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label id="addPriceLabel">Price per Unit ($) *</label>
+                        <input type="number" name="price" required step="0.01" placeholder="99.99">
+                    </div>
+
+                    <div class="form-group">
+                        <label id="addStockLabel">Initial Stock *</label>
+                        <input type="number" name="stock" required placeholder="100">
+                    </div>
+
+                    <div class="form-group lg:col-span-2">
+                        <label id="addImageLabel">Product Image</label>
+                        <div class="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+                            <div class="space-y-3">
+                                <input type="text" name="image_url" id="addImageUrl" placeholder="https://example.com/product.jpg">
+                                <input type="file" id="addImageFile" accept="image/*">
+                                <p class="text-xs text-neutral-500">Paste an image URL or choose an image file to convert and save with the product.</p>
+                            </div>
+                            <div class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 p-4">
+                                <img id="addImagePreview" src="" alt="Preview" class="hidden h-40 w-full rounded-2xl object-cover">
+                                <div id="addImagePlaceholder" class="flex h-40 items-center justify-center rounded-2xl bg-white text-sm text-neutral-400">No image selected</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group lg:col-span-2">
+                        <label id="addDescriptionLabel">Description</label>
+                        <textarea name="description" placeholder="Product description..."></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-2 flex items-center justify-end">
+                    <button type="submit" class="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" id="addProductButton">Add Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="restockModal" class="modal" onclick="handleRestockModalBackdrop(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Stock Control</p>
+                    <h2 id="manageStockTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">📦 Manage Stock</h2>
+                </div>
+                <button type="button" class="close-button" onclick="closeRestockModal()">&times;</button>
+            </div>
+            <form id="restockForm" onsubmit="handleRestock(event)">
+                <div class="form-group">
+                    <label id="selectProductLabel">Select Product *</label>
+                    <select id="productSelect" required>
+                        <option value="">Loading products...</option>
+                    </select>
+                </div>
+
+                <div class="mb-6 rounded-3xl border border-black/10 bg-neutral-50 px-5 py-4">
+                    <label id="currentStockLabel" class="mb-0 text-sm font-medium text-neutral-600">Current Stock: <span id="currentStock" class="font-semibold text-black">-</span></label>
+                </div>
+
+                <div class="grid gap-5 lg:grid-cols-2">
+                    <div class="form-group">
+                        <label id="quantityLabel">Add Stock Quantity *</label>
+                        <input type="number" name="quantity" required min="1" placeholder="e.g., 50">
+                    </div>
+
+                    <div class="form-group">
+                        <label id="reasonLabel">Reason for Restock</label>
+                        <input type="text" name="reason" placeholder="e.g., Weekly restock">
+                    </div>
+                </div>
+
+                <div class="mt-2 flex items-center justify-end">
+                    <button type="submit" class="rounded-full border border-black bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" id="addStockButton">Add Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/frontend-assets/i18n.js"></script>
+    <script>
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = hostname === 'localhost' || hostname === '127.0.0.1' ? ':8000' : '';
+        const API_BASE = `${protocol}//${hostname}${port}`;
+        let token = localStorage.getItem("auth_token");
+        let myProducts = [];
+        let productCategories = [];
+        let providerShops = [];
+        let salesHistory = [];
+        let restockHistory = [];
+        let currentEditingProductId = null;
+        let currentSalesBill = null;
+
+        const translations = {
+            en: {
+                title: "Provider Panel - Add Products & Services",
+                pageTitle: "🏪 Provider Panel",
+                pageSubtitle: "Manage your products and services",
+                logoutButton: "🚪 Logout",
+                statProductsLabel: "📦 My Products",
+                statStockLabel: "📂 Categories",
+                statRevenueLabel: "💰 Revenue",
+                statOrdersLabel: "📋 Orders",
+                tabInventoryHub: "📦 Inventory",
+                tabSalesHistory: "🧾 Sales History",
+                tabRestockHistory: "📥 Restock History",
+                tabSlipReview: "🧾 Slip Review",
+                inventoryHubTitle: "📦 Inventory Workspace",
+                openAddProductButton: "➕ Create Product",
+                openRestockButton: "📦 Update Stock",
+                shopStudioTitle: "🏬 Select Shop Before Adding Product",
+                shopSelectLabel: "Add product to shop *",
+                addProductTitle: "➕ Add New Product",
+                addNameLabel: "Product Name *",
+                addSkuLabel: "SKU (Stock Keeping Unit) *",
+                addCategoryLabel: "Category *",
+                addPriceLabel: "Price per Unit ($) *",
+                addStockLabel: "Initial Stock *",
+                addImageLabel: "Product Image",
+                addDescriptionLabel: "Description",
+                addProductButton: "Add Product",
+                manageStockTitle: "📦 Manage Stock",
+                selectProductLabel: "Select Product *",
+                currentStockLabelPrefix: "Current Stock",
+                quantityLabel: "Add Stock Quantity *",
+                reasonLabel: "Reason for Restock",
+                addStockButton: "Add Stock",
+                myProductsTitle: "📋 My Products",
+                editModalTitle: "✏️ Edit Product",
+                editNameLabel: "Product Name *",
+                editSkuLabel: "SKU *",
+                editCategoryLabel: "Category *",
+                editPriceLabel: "Price per Unit ($) *",
+                editStockLabel: "Stock *",
+                editImageLabel: "Product Image",
+                editDescriptionLabel: "Description",
+                filterCategoryLabel: "Filter by Category",
+                filterShopLabel: "Filter by Shop",
+                salesHistoryTitle: "🧾 Sales History",
+                salesDateLabel: "Select Day",
+                salesMonthLabel: "Month",
+                salesYearLabel: "Year",
+                salesCategoryLabel: "Category",
+                restockHistoryTitle: "📥 Restock History",
+                restockDateLabel: "Select Day",
+                restockMonthLabel: "Month",
+                restockYearLabel: "Year",
+                restockCategoryLabel: "Category",
+                slipReviewTitle: "🧾 Slip Review",
+                deleteButton: "Delete",
+                cancelButton: "Cancel",
+                saveButton: "Save Changes",
+                selectCategory: "Select Category",
+                allCategories: "All Categories",
+                allMonths: "All Months",
+                allYears: "All Years",
+                footwear: "Footwear",
+                apparel: "Apparel",
+                accessories: "Accessories",
+                electronics: "Electronics",
+                other: "Other",
+                loading: "Loading...",
+                noImageSelected: "No image selected",
+                noProductsFound: "No products found",
+                unableToLoadProducts: "Unable to load products",
+                selectAProduct: "Select a product...",
+                productAdded: "✅ Product added successfully!",
+                stockUpdated: "✅ Stock updated:",
+                pleaseSelectProduct: "❌ Please select a product",
+                noProductSelected: "❌ No product selected",
+                productNotFound: "❌ Product not found",
+                productUpdated: "✅ Product updated successfully!",
+                productDeleted: "✅ Product deleted successfully!",
+                deleteConfirm: "Delete {name}? This action cannot be undone.",
+                edit: "Edit",
+                productName: "Product Name",
+                sku: "SKU",
+                category: "Category",
+                price: "Price",
+                stock: "Stock",
+                action: "Action",
+                image: "Image",
+                description: "Description",
+                quantity: "Quantity",
+                customer: "Customer",
+                total: "Total",
+                store: "Store",
+                date: "Date",
+                reason: "Reason",
+                stockChange: "Stock Change",
+                invoice: "Invoice",
+                approve: "Approve",
+                reject: "Reject",
+                noSlipReviews: "No slips waiting for review.",
+                currentLabel: "Current",
+                addedUnits: "Added {qty} units",
+                manualRestock: "Manual restock",
+                noSalesHistory: "No sales history found for this filter.",
+                noRestockHistory: "No restock history found for this filter.",
+                noShopsYet: "No shops yet",
+                errorPrefix: "❌ Error:"
+            },
+            th: {
+                title: "แผงผู้ให้บริการ - จัดการสินค้าและบริการ",
+                pageTitle: "🏪 แผงผู้ให้บริการ",
+                pageSubtitle: "จัดการสินค้าและบริการของคุณ",
+                logoutButton: "🚪 ออกจากระบบ",
+                statProductsLabel: "📦 สินค้าของฉัน",
+                statStockLabel: "📂 หมวดสินค้า",
+                statRevenueLabel: "💰 รายได้",
+                statOrdersLabel: "📋 คำสั่งซื้อ",
+                tabInventoryHub: "📦 คลังสินค้า",
+                tabSalesHistory: "🧾 ประวัติการขาย",
+                tabRestockHistory: "📥 ประวัติเติมสินค้า",
+                tabSlipReview: "🧾 ตรวจสลิป",
+                inventoryHubTitle: "📦 พื้นที่จัดการคลังสินค้า",
+                openAddProductButton: "➕ สร้างสินค้า",
+                openRestockButton: "📦 เติมสต็อก",
+                shopStudioTitle: "🏬 เลือกร้านค้าก่อนเพิ่มสินค้า",
+                shopSelectLabel: "เพิ่มสินค้าเข้าร้าน *",
+                addProductTitle: "➕ เพิ่มสินค้าใหม่",
+                addNameLabel: "ชื่อสินค้า *",
+                addSkuLabel: "SKU (รหัสสินค้า) *",
+                addCategoryLabel: "หมวดหมู่ *",
+                addPriceLabel: "ราคาต่อหน่วย ($) *",
+                addStockLabel: "สต็อกเริ่มต้น *",
+                addImageLabel: "รูปสินค้า",
+                addDescriptionLabel: "รายละเอียด",
+                addProductButton: "เพิ่มสินค้า",
+                manageStockTitle: "📦 จัดการสต็อก",
+                selectProductLabel: "เลือกสินค้า *",
+                currentStockLabelPrefix: "สต็อกปัจจุบัน",
+                quantityLabel: "จำนวนสต็อกที่เพิ่ม *",
+                reasonLabel: "เหตุผลในการเติมสต็อก",
+                addStockButton: "เพิ่มสต็อก",
+                myProductsTitle: "📋 สินค้าของฉัน",
+                editModalTitle: "✏️ แก้ไขสินค้า",
+                editNameLabel: "ชื่อสินค้า *",
+                editSkuLabel: "SKU *",
+                editCategoryLabel: "หมวดหมู่ *",
+                editPriceLabel: "ราคาต่อหน่วย ($) *",
+                editStockLabel: "สต็อก *",
+                editImageLabel: "รูปสินค้า",
+                editDescriptionLabel: "รายละเอียด",
+                filterCategoryLabel: "กรองตามหมวดหมู่",
+                filterShopLabel: "กรองตามร้านค้า",
+                salesHistoryTitle: "🧾 ประวัติการขาย",
+                salesDateLabel: "เลือกวัน",
+                salesMonthLabel: "เดือน",
+                salesYearLabel: "ปี",
+                salesCategoryLabel: "หมวดหมู่",
+                restockHistoryTitle: "📥 ประวัติเติมสินค้า",
+                restockDateLabel: "เลือกวัน",
+                restockMonthLabel: "เดือน",
+                restockYearLabel: "ปี",
+                restockCategoryLabel: "หมวดหมู่",
+                slipReviewTitle: "🧾 ตรวจสลิป",
+                deleteButton: "ลบ",
+                cancelButton: "ยกเลิก",
+                saveButton: "บันทึกการเปลี่ยนแปลง",
+                selectCategory: "เลือกหมวดหมู่",
+                allCategories: "ทุกหมวดหมู่",
+                allMonths: "ทุกเดือน",
+                allYears: "ทุกปี",
+                footwear: "รองเท้า",
+                apparel: "เครื่องแต่งกาย",
+                accessories: "อุปกรณ์เสริม",
+                electronics: "อิเล็กทรอนิกส์",
+                other: "อื่น ๆ",
+                loading: "กำลังโหลด...",
+                noImageSelected: "ยังไม่ได้เลือกรูป",
+                noProductsFound: "ไม่พบสินค้า",
+                unableToLoadProducts: "ไม่สามารถโหลดสินค้าได้",
+                selectAProduct: "เลือกสินค้า...",
+                productAdded: "✅ เพิ่มสินค้าสำเร็จ!",
+                stockUpdated: "✅ อัปเดตสต็อกแล้ว:",
+                pleaseSelectProduct: "❌ กรุณาเลือกสินค้า",
+                noProductSelected: "❌ ยังไม่ได้เลือกสินค้า",
+                productNotFound: "❌ ไม่พบสินค้า",
+                productUpdated: "✅ อัปเดตสินค้าสำเร็จ!",
+                productDeleted: "✅ ลบสินค้าสำเร็จ!",
+                deleteConfirm: "ลบ {name}? การกระทำนี้ไม่สามารถย้อนกลับได้",
+                edit: "แก้ไข",
+                productName: "ชื่อสินค้า",
+                sku: "SKU",
+                category: "หมวดหมู่",
+                price: "ราคา",
+                stock: "สต็อก",
+                action: "การจัดการ",
+                image: "รูปภาพ",
+                description: "รายละเอียด",
+                quantity: "จำนวน",
+                customer: "ลูกค้า",
+                total: "รวม",
+                store: "ร้านค้า",
+                date: "วันที่",
+                reason: "เหตุผล",
+                stockChange: "การเปลี่ยนสต็อก",
+                invoice: "เลขบิล",
+                approve: "อนุมัติ",
+                reject: "ไม่อนุมัติ",
+                noSlipReviews: "ไม่มีสลิปรอตรวจ",
+                currentLabel: "ปัจจุบัน",
+                addedUnits: "เพิ่ม {qty} หน่วยแล้ว",
+                manualRestock: "เติมสต็อกด้วยตนเอง",
+                noSalesHistory: "ไม่พบประวัติการขายตามตัวกรองนี้",
+                noRestockHistory: "ไม่พบประวัติเติมสินค้าตามตัวกรองนี้",
+                noShopsYet: "ยังไม่มีร้านค้า",
+                errorPrefix: "❌ ข้อผิดพลาด:"
+            }
+        };
+
+        function t(key) {
+            const language = window.EcomI18n.getLanguage();
+            return translations[language][key] || translations.en[key] || key;
+        }
+
+        function translateTemplate(key, values = {}) {
+            let text = t(key);
+            Object.entries(values).forEach(([name, value]) => {
+                text = text.replace(`{${name}}`, value);
+            });
+            return text;
+        }
+
+        function applyTranslations() {
+            document.title = t("title");
+            [
+                "pageTitle","pageSubtitle","logoutButton","statProductsLabel","statStockLabel",
+                "statRevenueLabel","statOrdersLabel","tabInventoryHub","tabSalesHistory","tabRestockHistory","tabSlipReview",
+                "inventoryHubTitle","openAddProductButton","openRestockButton","shopStudioTitle","shopSelectLabel",
+                "addProductTitle","addNameLabel","addSkuLabel","addCategoryLabel","addPriceLabel",
+                "addStockLabel","addImageLabel","addDescriptionLabel","addProductButton","manageStockTitle",
+                "selectProductLabel","quantityLabel","reasonLabel","addStockButton","myProductsTitle",
+                "filterCategoryLabel","filterShopLabel","salesHistoryTitle","salesDateLabel","salesMonthLabel","salesYearLabel",
+                "salesCategoryLabel","restockHistoryTitle","restockDateLabel","restockMonthLabel",
+                "restockYearLabel","restockCategoryLabel","slipReviewTitle",
+                "editModalTitle","editNameLabel","editSkuLabel","editCategoryLabel","editPriceLabel",
+                "editStockLabel","editImageLabel","editDescriptionLabel","deleteButton","cancelButton","saveButton"
+            ].forEach((id) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = t(id);
+                }
+            });
+
+            document.getElementById("currentStockLabel").innerHTML = `${t("currentStockLabelPrefix")}: <span id="currentStock">${document.getElementById('currentStock').textContent}</span>`;
+
+            document.querySelectorAll("[data-category-key]").forEach((option) => {
+                option.textContent = t(option.dataset.categoryKey);
+            });
+
+            const addPlaceholder = document.getElementById("addImagePlaceholder");
+            if (addPlaceholder) addPlaceholder.textContent = t("noImageSelected");
+
+            const editPlaceholder = document.getElementById("editImagePlaceholder");
+            if (editPlaceholder) editPlaceholder.textContent = t("noImageSelected");
+
+            const myProductsTable = document.getElementById("myProductsTable");
+            if (!myProducts.length && myProductsTable.textContent.includes("Loading")) {
+                myProductsTable.innerHTML = `<p class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-10 text-center text-neutral-500">${t("loading")}</p>`;
+            }
+
+            populateShopOptions();
+        }
+
+        function formatCurrency(value) {
+            return '$' + (parseFloat(value || 0)).toFixed(2);
+        }
+
+        function formatDate(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '-';
+            return date.toLocaleString(window.EcomI18n.getLanguage() === 'th' ? 'th-TH' : 'en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatShortDate(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '-';
+            return date.toLocaleDateString(window.EcomI18n.getLanguage() === 'th' ? 'th-TH' : 'en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function prettyLabel(value) {
+            if (!value) return '-';
+            return String(value).replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+        }
+
+        function normalizeAssetUrl(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            if (raw.startsWith('data:image/')) return raw;
+            if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('blob:') || raw.startsWith('/')) {
+                return raw;
+            }
+            return '';
+        }
+
+        function safeSetSelectValue(select, value, fallback = '') {
+            if (!select) return;
+            const normalized = value == null ? '' : String(value);
+            const values = Array.from(select.options).map((option) => String(option.value));
+            if (normalized && values.includes(normalized)) {
+                select.value = normalized;
+                return;
+            }
+            if (fallback && values.includes(String(fallback))) {
+                select.value = String(fallback);
+                return;
+            }
+            select.value = values.includes('') ? '' : (values[0] || '');
+        }
+
+        function renderProductImageCell(imageUrl, name) {
+            const safeUrl = normalizeAssetUrl(imageUrl);
+            if (!safeUrl) {
+                return `<div class="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-black/10 bg-neutral-50 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">${t('image')}</div>`;
+            }
+            return `<img src="${safeUrl}" alt="${name}" class="h-16 w-16 rounded-2xl object-cover shadow-sm">`;
+        }
+
+        function setImagePreview(previewId, placeholderId, value) {
+            const preview = document.getElementById(previewId);
+            const placeholder = document.getElementById(placeholderId);
+            if (!preview || !placeholder) return;
+            if (value) {
+                preview.src = value;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            } else {
+                preview.src = '';
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                placeholder.textContent = t('noImageSelected');
+            }
+        }
+
+        async function fileToDataUrl(file) {
+            return await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function syncImageInput(fileInputId, urlInputId, previewId, placeholderId) {
+            const fileInput = document.getElementById(fileInputId);
+            const urlInput = document.getElementById(urlInputId);
+            if (!fileInput || !urlInput || !fileInput.files?.length) return;
+            const dataUrl = await fileToDataUrl(fileInput.files[0]);
+            urlInput.value = dataUrl;
+            setImagePreview(previewId, placeholderId, dataUrl);
+        }
+
+        function bindImagePreview(urlInputId, previewId, placeholderId) {
+            const urlInput = document.getElementById(urlInputId);
+            if (!urlInput) return;
+            urlInput.addEventListener('input', () => {
+                setImagePreview(previewId, placeholderId, urlInput.value.trim());
+            });
+        }
+
+        function populateMonthOptions(selectId) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            const currentValue = select.value;
+            const monthNames = window.EcomI18n.getLanguage() === 'th'
+                ? ['ทุกเดือน', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
+                : ['All Months', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            select.innerHTML = `<option value="">${t('allMonths')}</option>`;
+            for (let month = 1; month <= 12; month += 1) {
+                const option = document.createElement('option');
+                option.value = String(month);
+                option.textContent = monthNames[month];
+                select.appendChild(option);
+            }
+            safeSetSelectValue(select, currentValue);
+        }
+
+        function populateYearOptions(selectId) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            const currentValue = select.value;
+            const currentYear = new Date().getFullYear();
+            select.innerHTML = `<option value="">${t('allYears')}</option>`;
+            for (let year = currentYear + 1; year >= currentYear - 5; year -= 1) {
+                const option = document.createElement('option');
+                option.value = String(year);
+                option.textContent = String(year);
+                select.appendChild(option);
+            }
+            safeSetSelectValue(select, currentValue);
+        }
+
+        function populateCategoryFilters() {
+            const filterIds = ['categoryFilter', 'salesCategoryFilter', 'restockCategoryFilter'];
+            filterIds.forEach((id) => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = `<option value="">${t('allCategories')}</option>`;
+                productCategories.forEach((category) => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    select.appendChild(option);
+                });
+                safeSetSelectValue(select, currentValue);
+            });
+        }
+
+        function populateShopOptions() {
+            const shopSelect = document.getElementById('shopSelect');
+            const shopFilter = document.getElementById('shopFilter');
+            const shopCountBadge = document.getElementById('shopCountBadge');
+
+            if (shopCountBadge) {
+                shopCountBadge.textContent = `${providerShops.length} shop${providerShops.length === 1 ? '' : 's'}`;
+            }
+
+            if (shopSelect) {
+                const currentValue = shopSelect.value;
+                shopSelect.innerHTML = providerShops.length
+                    ? providerShops.map((shop) => `<option value="${shop.provider_id}">${shop.provider_name}${shop.is_primary ? ' • Main' : ''}</option>`).join('')
+                    : `<option value="">${t('noShopsYet')}</option>`;
+                safeSetSelectValue(shopSelect, currentValue, providerShops[0]?.provider_id || '');
+            }
+
+            if (shopFilter) {
+                const currentValue = shopFilter.value;
+                shopFilter.innerHTML = `<option value="">${window.EcomI18n.getLanguage() === 'th' ? 'ทุกร้านค้า' : 'All Shops'}</option>${providerShops.map((shop) => `<option value="${shop.provider_id}">${shop.provider_name}</option>`).join('')}`;
+                safeSetSelectValue(shopFilter, currentValue, '');
+            }
+        }
+
+        function buildFallbackShopsFromProducts(products = []) {
+            const map = new Map();
+            products.forEach((product) => {
+                const providerId = String(product.provider_id || '').trim();
+                if (!providerId || map.has(providerId)) return;
+                map.set(providerId, {
+                    provider_id: providerId,
+                    provider_name: product.provider_name || providerId,
+                    email: '',
+                    is_primary: providerId === 'provider_001' || providerId === 'provider',
+                });
+            });
+            return Array.from(map.values());
+        }
+
+        async function loadProviderShops() {
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/shops`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load shops');
+                }
+
+                const data = await response.json();
+                providerShops = data.shops || [];
+                populateShopOptions();
+            } catch (error) {
+                console.error('Failed to load provider shops', error);
+                if (!providerShops.length && myProducts.length) {
+                    providerShops = buildFallbackShopsFromProducts(myProducts);
+                    populateShopOptions();
+                }
+            }
+        }
+
+        function getHistoryFilterParams(prefix) {
+            const dateValue = document.getElementById(`${prefix}DayFilter`).value;
+            const monthValue = document.getElementById(`${prefix}MonthFilter`).value;
+            const yearValue = document.getElementById(`${prefix}YearFilter`).value;
+            const categoryValue = document.getElementById(`${prefix}CategoryFilter`).value;
+            const params = new URLSearchParams();
+
+            if (dateValue) {
+                const [year, month, day] = dateValue.split('-');
+                params.set('day', String(parseInt(day, 10)));
+                params.set('month', String(parseInt(month, 10)));
+                params.set('year', String(parseInt(year, 10)));
+            } else {
+                if (monthValue) params.set('month', monthValue);
+                if (yearValue) params.set('year', yearValue);
+            }
+
+            if (categoryValue) params.set('category', categoryValue);
+            return params;
+        }
+
+        function resetHistoryFilters(prefix) {
+            document.getElementById(`${prefix}DayFilter`).value = '';
+            document.getElementById(`${prefix}MonthFilter`).value = '';
+            document.getElementById(`${prefix}YearFilter`).value = '';
+            document.getElementById(`${prefix}CategoryFilter`).value = '';
+            if (prefix === 'sales') {
+                loadSalesHistory();
+            } else {
+                loadRestockHistory();
+            }
+        }
+
+        function getStatusBadgeClass(value) {
+            const normalized = String(value || '').trim().toLowerCase().replace(/\s+/g, '_');
+            if (!normalized) return 'status-badge';
+            if (normalized.includes('pending') || normalized.includes('waiting') || normalized.includes('awaiting')) {
+                return 'status-badge pending';
+            }
+            if (normalized.includes('cancel') || normalized.includes('reject') || normalized.includes('fail')) {
+                return 'status-badge cancel';
+            }
+            if (normalized.includes('paid') || normalized.includes('complete') || normalized.includes('approve') || normalized.includes('success') || normalized.includes('ship') || normalized.includes('deliver')) {
+                return 'status-badge paid';
+            }
+            return 'status-badge';
+        }
+
+        function openProductModal() {
+            const selectedShop = document.getElementById('shopSelect')?.value || '';
+            document.getElementById('modalProviderId').value = selectedShop;
+            document.getElementById('productModal').classList.add('show');
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').classList.remove('show');
+        }
+
+        function handleProductModalBackdrop(event) {
+            if (event.target.id === 'productModal') {
+                closeProductModal();
+            }
+        }
+
+        function openRestockModal() {
+            document.getElementById('restockModal').classList.add('show');
+        }
+
+        function closeRestockModal() {
+            document.getElementById('restockModal').classList.remove('show');
+        }
+
+        function handleRestockModalBackdrop(event) {
+            if (event.target.id === 'restockModal') {
+                closeRestockModal();
+            }
+        }
+
+        function switchTab(tabName, event) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            if (event?.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+
+            if (tabName === 'inventory-hub') {
+                loadMyProducts();
+                loadProductsForRestock();
+            } else if (tabName === 'sales-history') {
+                loadSalesHistory();
+            } else if (tabName === 'restock-history') {
+                loadRestockHistory();
+            } else if (tabName === 'slip-review') {
+                loadSlipReviews();
+            }
+        }
+
+        async function handleAddProduct(e) {
+            e.preventDefault();
+            await syncImageInput('addImageFile', 'addImageUrl', 'addImagePreview', 'addImagePlaceholder');
+
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                sku: formData.get('sku'),
+                category: formData.get('category'),
+                price: parseFloat(formData.get('price')),
+                stock: parseInt(formData.get('stock')),
+                description: formData.get('description'),
+                image_url: formData.get('image_url'),
+                provider_id: formData.get('provider_id')
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    showMessage(t('productAdded'), 'success');
+                    e.target.reset();
+                    closeProductModal();
+                    setImagePreview('addImagePreview', 'addImagePlaceholder', '');
+                    document.getElementById('addImageFile').value = '';
+                    populateShopOptions();
+                    await loadProductCategories();
+                    await loadProductsForRestock();
+                    await loadMyProducts();
+                    await loadDashboard();
+                } else {
+                    const error = await response.json();
+                    showMessage(`❌ Error: ${error.detail}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        async function loadProductsForRestock() {
+            const select = document.getElementById('productSelect');
+            select.innerHTML = `<option value="">${t('selectAProduct')}</option>`;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/products`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || t('unableToLoadProducts'));
+                }
+
+                const data = await response.json();
+                myProducts = data.products || [];
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+                select.innerHTML = `<option value="">${t('unableToLoadProducts')}</option>`;
+                return;
+            }
+
+            if (myProducts.length === 0) {
+                select.innerHTML = `<option value="">${t('noProductsFound')}</option>`;
+                document.getElementById('currentStock').textContent = '-';
+                return;
+            }
+
+            myProducts.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product._id;
+                option.textContent = `${product.name} - ${product.provider_name || '-'} (${t('currentLabel')}: ${product.stock})`;
+                select.appendChild(option);
+            });
+
+            select.onchange = updateCurrentStock;
+            updateCurrentStock();
+        }
+
+        function updateCurrentStock() {
+            const select = document.getElementById('productSelect');
+            const product = myProducts.find(p => p._id === select.value);
+            if (product) {
+                document.getElementById('currentStock').textContent = product.stock;
+            }
+        }
+
+        async function handleRestock(e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const productId = document.getElementById('productSelect').value;
+            const quantity = parseInt(form.elements.quantity.value, 10);
+            const reason = form.elements.reason.value || t('manualRestock');
+
+            if (!productId) {
+                showMessage(t('pleaseSelectProduct'), 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/provider/products/${productId}/stock`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ quantity, reason })
+                    }
+                );
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showMessage(
+                        `${t('stockUpdated')} ${data.result.old_stock} → ${data.result.new_stock}`,
+                        'success'
+                    );
+                    form.reset();
+                    closeRestockModal();
+                    await loadProductsForRestock();
+                    await loadDashboard();
+                } else {
+                    const error = await response.json();
+                    showMessage(`${t('errorPrefix')} ${error.detail}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        async function loadMyProducts() {
+            try {
+                const params = new URLSearchParams();
+                const categoryFilter = document.getElementById('categoryFilter')?.value;
+                const shopFilter = document.getElementById('shopFilter')?.value;
+                if (categoryFilter) params.set('category', categoryFilter);
+                if (shopFilter) params.set('provider_id', shopFilter);
+
+                const response = await fetch(`${API_BASE}/api/provider/products${params.toString() ? `?${params.toString()}` : ''}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    myProducts = data.products || [];
+                    if (!providerShops.length && myProducts.length) {
+                        providerShops = buildFallbackShopsFromProducts(myProducts);
+                        populateShopOptions();
+                    }
+
+                    if (!myProducts.length) {
+                        document.getElementById('myProductsTable').innerHTML = `
+                            <div class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-12 text-center">
+                                <p class="text-lg font-medium text-black">${t('noProductsFound')}</p>
+                                <p class="mt-2 text-sm text-neutral-500">Start by adding your first product to the catalog.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    document.getElementById('myProductsTable').innerHTML = `
+                        <div class="overflow-hidden rounded-[28px] border border-black/10 bg-white">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-black/10 text-sm">
+                                    <thead class="bg-neutral-100 text-left text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                                        <tr>
+                                            <th class="px-6 py-4">${t('image')}</th>
+                                            <th class="px-6 py-4">${t('productName')}</th>
+                                            <th class="px-6 py-4">${t('store')}</th>
+                                            <th class="px-6 py-4">${t('sku')}</th>
+                                            <th class="px-6 py-4">${t('category')}</th>
+                                            <th class="px-6 py-4">${t('price')}</th>
+                                            <th class="px-6 py-4">${t('stock')}</th>
+                                            <th class="px-6 py-4">${t('action')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-black/5 bg-white">
+                                        ${myProducts.map(p => `
+                                            <tr class="transition hover:bg-neutral-50">
+                                                <td class="px-6 py-5">${renderProductImageCell(p.image_url, p.name)}</td>
+                                                <td class="px-6 py-5">
+                                                    <div class="font-medium text-black">${p.name}</div>
+                                                    <div class="mt-1 text-xs text-neutral-500">${p.description || '-'}</div>
+                                                </td>
+                                                <td class="px-6 py-5 text-neutral-600">${p.provider_name || p.provider_id || '-'}</td>
+                                                <td class="px-6 py-5 text-neutral-600">${p.sku}</td>
+                                                <td class="px-6 py-5">
+                                                    <span class="inline-flex rounded-full border border-black/10 bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">${p.category}</span>
+                                                </td>
+                                                <td class="px-6 py-5 font-medium text-black">${formatCurrency(p.price)}</td>
+                                                <td class="px-6 py-5 text-neutral-700">${p.stock}</td>
+                                                <td class="px-6 py-5">
+                                                    <button class="rounded-full border border-black bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-neutral-800" onclick="editProduct('${p._id}')">
+                                                        ${t('edit')}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('productCount').textContent = data.total_products;
+                    document.getElementById('stockCount').textContent = data.total_categories ?? 0;
+                    document.getElementById('revenue').textContent = '$' + (data.total_revenue || 0).toFixed(2);
+                    document.getElementById('orderCount').textContent = data.total_orders;
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function loadProductCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/product-categories`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to load categories');
+
+                const data = await response.json();
+                productCategories = data.categories || [];
+                populateCategoryFilters();
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        async function loadSalesHistory() {
+            try {
+                const params = getHistoryFilterParams('sales');
+                const response = await fetch(`${API_BASE}/api/provider/sales-history?${params.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load sales history');
+                }
+
+                const data = await response.json();
+                salesHistory = data.history || [];
+
+                if (!salesHistory.length) {
+                    document.getElementById('salesHistoryTable').innerHTML = `
+                        <div class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-12 text-center">
+                            <p class="text-lg font-medium text-black">${t('noSalesHistory')}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                document.getElementById('salesHistoryTable').innerHTML = `
+                    <div class="overflow-hidden rounded-[28px] border border-black/10 bg-white">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-black/10 text-sm">
+                                <thead class="bg-neutral-100 text-left text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                                    <tr>
+                                        <th class="px-6 py-4">#</th>
+                                        <th class="px-6 py-4">${t('date')}</th>
+                                        <th class="px-6 py-4">${t('invoice')}</th>
+                                        <th class="px-6 py-4">${t('customer')}</th>
+                                        <th class="px-6 py-4">Payment</th>
+                                        <th class="px-6 py-4">Method</th>
+                                        <th class="px-6 py-4">${t('total')}</th>
+                                        <th class="px-6 py-4">${t('action')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-black/5 bg-white">
+                                    ${salesHistory.map((entry, index) => `
+                                        <tr class="transition hover:bg-neutral-50">
+                                            <td class="px-6 py-5 text-neutral-500">${index + 1}</td>
+                                            <td class="px-6 py-5 text-neutral-600">${formatDate(entry.created_at)}</td>
+                                            <td class="px-6 py-5">
+                                                <div class="font-medium text-black">${entry.invoice_number || '-'}</div>
+                                                <div class="text-xs text-neutral-500">${entry.receipt_number || '-'}</div>
+                                            </td>
+                                            <td class="px-6 py-5">
+                                                <div class="font-medium text-black">${entry.customer_name || '-'}</div>
+                                                <div class="text-xs text-neutral-500">${entry.customer_email || ''}</div>
+                                            </td>
+                                            <td class="px-6 py-5">
+                                                <span class="${getStatusBadgeClass(entry.payment_status)}">${entry.payment_status || '-'}</span>
+                                            </td>
+                                            <td class="px-6 py-5 text-neutral-600">${entry.payment_history?.[entry.payment_history.length - 1]?.channel || '-'}</td>
+                                            <td class="px-6 py-5 font-medium text-black">${formatCurrency(entry.grand_total || entry.provider_total)}</td>
+                                            <td class="px-6 py-5">
+                                                <button class="rounded-full border border-black bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-neutral-800" onclick="openSalesBill('${entry.order_id}')">
+                                                    View Bill
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-sm text-neutral-500">
+                        ${salesHistory.length} bills loaded
+                    </div>
+                `;
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        function openSalesBill(orderId) {
+            currentSalesBill = salesHistory.find((entry) => entry.order_id === orderId) || null;
+            if (!currentSalesBill) return;
+
+            const leftColumn = `
+                <div class="space-y-6">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="rounded-full bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-500">Created ${formatDate(currentSalesBill.created_at)}</span>
+                        <span class="rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">Bill Date: ${formatShortDate(currentSalesBill.created_at)}</span>
+                    </div>
+                    <div class="flex flex-wrap items-end justify-between gap-4">
+                        <div>
+                            <div class="text-sm text-neutral-500">${t('invoice')}</div>
+                            <div class="mt-1 text-3xl font-semibold tracking-tight text-black">${currentSalesBill.invoice_number || '-'}</div>
+                            <div class="mt-2 text-sm text-neutral-500">Receipt ${currentSalesBill.receipt_number || '-'}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-neutral-500">${t('customer')}</div>
+                            <div class="mt-1 text-xl font-semibold text-black">${currentSalesBill.customer_name || '-'}</div>
+                            <div class="text-sm text-neutral-500">${currentSalesBill.customer_email || ''}</div>
+                        </div>
+                    </div>
+                    <div class="overflow-hidden rounded-[24px] border border-black/10 bg-white">
+                        <table class="min-w-full divide-y divide-black/10 text-sm">
+                            <thead class="bg-neutral-100 text-left text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                                <tr>
+                                    <th class="px-5 py-4">#</th>
+                                    <th class="px-5 py-4">${t('productName')}</th>
+                                    <th class="px-5 py-4">${t('sku')}</th>
+                                    <th class="px-5 py-4">${t('quantity')}</th>
+                                    <th class="px-5 py-4">${t('price')}</th>
+                                    <th class="px-5 py-4">${t('total')}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-black/5 bg-white">
+                                ${currentSalesBill.items.map((item, index) => `
+                                    <tr>
+                                        <td class="px-5 py-4 text-neutral-500">${index + 1}</td>
+                                        <td class="px-5 py-4">
+                                            <div class="flex items-center gap-3">
+                                                ${renderProductImageCell(item.image_url, item.product_name)}
+                                                <div>
+                                                    <div class="font-medium text-black">${item.product_name}</div>
+                                                    <div class="text-xs text-neutral-500">${item.category || '-'}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-4 text-neutral-600">${item.sku || '-'}</td>
+                                        <td class="px-5 py-4 text-neutral-700">${item.quantity}</td>
+                                        <td class="px-5 py-4 font-medium text-black">${formatCurrency(item.unit_price)}</td>
+                                        <td class="px-5 py-4 font-medium text-black">${formatCurrency(item.total_amount)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            const rightColumn = `
+                <div class="space-y-6">
+                    <div class="text-center">
+                        <div class="text-sm text-neutral-500">ยอดรวม</div>
+                        <div class="mt-2 text-5xl font-semibold tracking-tight text-black">${formatCurrency(currentSalesBill.grand_total || currentSalesBill.provider_total)}</div>
+                        <div class="mt-3 inline-flex ${getStatusBadgeClass(currentSalesBill.payment_status)} px-4 py-2 text-sm">${currentSalesBill.payment_status || '-'}</div>
+                    </div>
+                    <div class="rounded-[24px] bg-white p-5 shadow-sm">
+                        <div class="flex items-center justify-between text-sm text-neutral-500"><span>Subtotal</span><strong class="text-black">${formatCurrency(currentSalesBill.subtotal)}</strong></div>
+                        <div class="mt-3 flex items-center justify-between text-sm text-neutral-500"><span>Discount</span><strong class="text-black">${formatCurrency(currentSalesBill.discount_amount)}</strong></div>
+                        <div class="mt-3 flex items-center justify-between text-sm text-neutral-500"><span>Before VAT</span><strong class="text-black">${formatCurrency(currentSalesBill.taxable_amount)}</strong></div>
+                        <div class="mt-3 flex items-center justify-between text-sm text-neutral-500"><span>VAT / Tax</span><strong class="text-black">${formatCurrency(currentSalesBill.tax_amount)}</strong></div>
+                        <div class="mt-4 border-t border-black/10 pt-4 flex items-center justify-between text-base font-semibold text-black"><span>Grand Total</span><span>${formatCurrency(currentSalesBill.grand_total || currentSalesBill.provider_total)}</span></div>
+                    </div>
+                    <div class="rounded-[24px] bg-white p-5 shadow-sm">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-black">Payment History</h3>
+                            <span class="text-xs uppercase tracking-[0.18em] text-neutral-400">${currentSalesBill.payment_history.length} entries</span>
+                        </div>
+                        <div class="space-y-3">
+                            ${currentSalesBill.payment_history.map((payment) => `
+                                <div class="rounded-[18px] border border-black/10 px-4 py-4">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div class="font-semibold text-black">${payment.label}</div>
+                                            <div class="mt-1 text-sm text-neutral-500">${payment.timestamp ? `เมื่อ: ${formatDate(payment.timestamp)}` : '-'}</div>
+                                            <div class="mt-1 text-sm text-neutral-500">ช่องทาง: ${prettyLabel(payment.channel)}</div>
+                                            ${payment.note ? `<div class="mt-2 text-sm text-neutral-500">${payment.note}</div>` : ''}
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-lg font-semibold text-black">${formatCurrency(payment.amount)}</div>
+                                            <div class="mt-1 inline-flex ${getStatusBadgeClass(payment.status)} px-3 py-1 text-xs">${prettyLabel(payment.status)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('salesBillModalBody').innerHTML = `
+                <div class="border-t border-black/10 px-8 py-8">${leftColumn}</div>
+                <div class="border-t border-l border-black/10 bg-neutral-50 px-8 py-8">${rightColumn}</div>
+            `;
+            document.getElementById('salesBillModal').classList.add('show');
+        }
+
+        function closeSalesBillModal() {
+            currentSalesBill = null;
+            document.getElementById('salesBillModal').classList.remove('show');
+        }
+
+        function handleSalesBillBackdrop(event) {
+            if (event.target.id === 'salesBillModal') {
+                closeSalesBillModal();
+            }
+        }
+
+        async function loadRestockHistory() {
+            try {
+                const params = getHistoryFilterParams('restock');
+                const response = await fetch(`${API_BASE}/api/provider/restock-history?${params.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load restock history');
+                }
+
+                const data = await response.json();
+                restockHistory = data.history || [];
+
+                if (!restockHistory.length) {
+                    document.getElementById('restockHistoryTable').innerHTML = `
+                        <div class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-12 text-center">
+                            <p class="text-lg font-medium text-black">${t('noRestockHistory')}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                document.getElementById('restockHistoryTable').innerHTML = `
+                    <div class="overflow-hidden rounded-[28px] border border-black/10 bg-white">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-black/10 text-sm">
+                                <thead class="bg-neutral-100 text-left text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                                    <tr>
+                                        <th class="px-6 py-4">${t('image')}</th>
+                                        <th class="px-6 py-4">${t('productName')}</th>
+                                        <th class="px-6 py-4">${t('sku')}</th>
+                                        <th class="px-6 py-4">${t('category')}</th>
+                                        <th class="px-6 py-4">${t('quantity')}</th>
+                                        <th class="px-6 py-4">${t('stockChange')}</th>
+                                        <th class="px-6 py-4">${t('reason')}</th>
+                                        <th class="px-6 py-4">${t('date')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-black/5 bg-white">
+                                    ${restockHistory.map((entry) => `
+                                        <tr class="transition hover:bg-neutral-50">
+                                            <td class="px-6 py-5">${renderProductImageCell(entry.image_url, entry.product_name)}</td>
+                                            <td class="px-6 py-5 font-medium text-black">${entry.product_name}</td>
+                                            <td class="px-6 py-5 text-neutral-600">${entry.sku || '-'}</td>
+                                            <td class="px-6 py-5 text-neutral-600">${entry.category || '-'}</td>
+                                            <td class="px-6 py-5 font-medium text-black">+${entry.quantity_changed}</td>
+                                            <td class="px-6 py-5 text-neutral-600">${entry.old_stock} → ${entry.new_stock}</td>
+                                            <td class="px-6 py-5 text-neutral-600">${entry.reason || '-'}</td>
+                                            <td class="px-6 py-5 text-neutral-600">${formatDate(entry.timestamp)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        async function reviewSlip(orderId, action) {
+            const note = prompt(action === 'approve' ? 'Review note (optional)' : 'Reason for rejection (optional)') || '';
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/slip-reviews/${orderId}/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ note })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || `Failed to ${action} slip`);
+                }
+                showMessage(action === 'approve' ? '✅ Slip approved' : '✅ Slip rejected', 'success');
+                await loadSlipReviews();
+                await loadDashboard();
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        async function loadSlipReviews() {
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/slip-reviews`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load slip reviews');
+                }
+                const data = await response.json();
+                const orders = data.orders || [];
+                if (!orders.length) {
+                    document.getElementById('slipReviewTable').innerHTML = `
+                        <div class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-12 text-center">
+                            <p class="text-lg font-medium text-black">${t('noSlipReviews')}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                document.getElementById('slipReviewTable').innerHTML = `
+                    <div class="overflow-hidden rounded-[28px] border border-black/10 bg-white">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-black/10 text-sm">
+                                <thead class="bg-neutral-100 text-left text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                                    <tr>
+                                        <th class="px-6 py-4">${t('invoice')}</th>
+                                        <th class="px-6 py-4">${t('customer')}</th>
+                                        <th class="px-6 py-4">${t('total')}</th>
+                                        <th class="px-6 py-4">Slip</th>
+                                        <th class="px-6 py-4">${t('action')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-black/5 bg-white">
+                                    ${orders.map((order) => `
+                                        <tr class="transition hover:bg-neutral-50">
+                                            <td class="px-6 py-5">${order.invoice_number || '-'}</td>
+                                            <td class="px-6 py-5">
+                                                <div class="font-medium text-black">${order.customer_name || '-'}</div>
+                                                <div class="text-xs text-neutral-500">${order.customer_email || ''}</div>
+                                            </td>
+                                            <td class="px-6 py-5 font-medium text-black">${formatCurrency(order.total_amount)}</td>
+                                            <td class="px-6 py-5">${order.slip_image ? `<a class="text-sm font-semibold text-blue-600 underline" href="${order.slip_image}" target="_blank">View Slip</a>` : '-'}</td>
+                                            <td class="px-6 py-5">
+                                                <div class="flex flex-wrap gap-2">
+                                                    <button class="rounded-full bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-neutral-800" onclick="reviewSlip('${order.order_id}', 'approve')">${t('approve')}</button>
+                                                    <button class="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-red-700 transition hover:border-red-300 hover:bg-red-100" onclick="reviewSlip('${order.order_id}', 'reject')">${t('reject')}</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        function showMessage(msg, type) {
+            const msgDiv = document.getElementById('message');
+            const normalizedMessage = String(msg || '').trim();
+            if (!normalizedMessage || normalizedMessage.includes('The string did not match the expected pattern.')) {
+                msgDiv.innerHTML = '';
+                return;
+            }
+            const styles = type === 'success'
+                ? 'border border-emerald-200 bg-emerald-50 text-emerald-800'
+                : 'border border-red-200 bg-red-50 text-red-800';
+            msgDiv.innerHTML = `<div class="rounded-3xl px-5 py-4 text-sm font-medium shadow-sm ${styles}">${normalizedMessage}</div>`;
+            setTimeout(() => msgDiv.innerHTML = '', 5000);
+        }
+
+        function editProduct(productId) {
+            const product = myProducts.find(p => p._id === productId);
+            if (!product) {
+                showMessage(t('productNotFound'), 'error');
+                return;
+            }
+
+            currentEditingProductId = productId;
+            document.getElementById('editName').value = product.name || '';
+            document.getElementById('editSku').value = product.sku || '';
+            document.getElementById('editCategory').value = product.category || '';
+            document.getElementById('editPrice').value = product.price ?? 0;
+            document.getElementById('editStock').value = product.stock ?? 0;
+            document.getElementById('editImageUrl').value = product.image_url || '';
+            document.getElementById('editImageFile').value = '';
+            setImagePreview('editImagePreview', 'editImagePlaceholder', product.image_url || '');
+            document.getElementById('editDescription').value = product.description || '';
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function closeEditModal() {
+            currentEditingProductId = null;
+            document.getElementById('editProductForm').reset();
+            setImagePreview('editImagePreview', 'editImagePlaceholder', '');
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        function handleModalBackdrop(event) {
+            if (event.target.id === 'editModal') {
+                closeEditModal();
+            }
+        }
+
+        async function handleEditProduct(event) {
+            event.preventDefault();
+            await syncImageInput('editImageFile', 'editImageUrl', 'editImagePreview', 'editImagePlaceholder');
+
+            if (!currentEditingProductId) {
+                showMessage(t('noProductSelected'), 'error');
+                return;
+            }
+
+            const form = event.target;
+            const payload = {
+                name: form.elements.name.value.trim(),
+                sku: form.elements.sku.value.trim(),
+                category: form.elements.category.value,
+                price: parseFloat(form.elements.price.value),
+                stock: parseInt(form.elements.stock.value, 10),
+                image_url: form.elements.image_url.value.trim(),
+                description: form.elements.description.value.trim()
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/products/${currentEditingProductId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to update product');
+                }
+
+                showMessage(t('productUpdated'), 'success');
+                closeEditModal();
+                await loadProductCategories();
+                await loadMyProducts();
+                await loadProductsForRestock();
+                await loadDashboard();
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteProduct() {
+            if (!currentEditingProductId) {
+                showMessage(t('noProductSelected'), 'error');
+                return;
+            }
+
+            const product = myProducts.find(p => p._id === currentEditingProductId);
+            const productName = product?.name || 'this product';
+
+            if (!confirm(translateTemplate('deleteConfirm', { name: productName }))) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/products/${currentEditingProductId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to delete product');
+                }
+
+                showMessage(t('productDeleted'), 'success');
+                closeEditModal();
+                await loadProductCategories();
+                await loadMyProducts();
+                await loadProductsForRestock();
+                await loadDashboard();
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("auth_token");
+            localStorage.removeItem("user_id");
+            window.location.href = "/login.html";
+        }
+
+        async function initializeProviderPanel() {
+            applyTranslations();
+            ['salesMonthFilter', 'restockMonthFilter'].forEach(populateMonthOptions);
+            ['salesYearFilter', 'restockYearFilter'].forEach(populateYearOptions);
+            bindImagePreview('addImageUrl', 'addImagePreview', 'addImagePlaceholder');
+            bindImagePreview('editImageUrl', 'editImagePreview', 'editImagePlaceholder');
+            document.getElementById('addImageFile').addEventListener('change', () => syncImageInput('addImageFile', 'addImageUrl', 'addImagePreview', 'addImagePlaceholder'));
+            document.getElementById('editImageFile').addEventListener('change', () => syncImageInput('editImageFile', 'editImageUrl', 'editImagePreview', 'editImagePlaceholder'));
+
+            const loadSteps = [
+                ['products', loadMyProducts],
+                ['shops', loadProviderShops],
+                ['categories', loadProductCategories],
+                ['dashboard', loadDashboard],
+                ['restock', loadProductsForRestock],
+            ];
+
+            for (const [label, loader] of loadSteps) {
+                try {
+                    await loader();
+                } catch (error) {
+                    console.error(`Provider panel step failed: ${label}`, error);
+                }
+            }
+        }
+
+        window.EcomI18n.bindSelect(document.getElementById("languageSwitcher"));
+        window.EcomI18n.init(() => {
+            applyTranslations();
+            populateCategoryFilters();
+            ['salesMonthFilter', 'restockMonthFilter'].forEach(populateMonthOptions);
+            ['salesYearFilter', 'restockYearFilter'].forEach(populateYearOptions);
+        });
+
+        window.addEventListener('load', () => {
+            initializeProviderPanel();
+        });
+
+        setInterval(loadDashboard, 60000);
+    </script>
+</body>
+</html>

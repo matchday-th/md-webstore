@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Register - E-Commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["Prompt", "ui-sans-serif", "system-ui", "sans-serif"]
+                    },
+                    boxShadow: {
+                        panel: "0 24px 80px rgba(0, 0, 0, 0.10)"
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', ui-sans-serif, system-ui, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,0.88), rgba(255,255,255,0) 28%),
+                radial-gradient(circle at bottom right, rgba(255,255,255,0.72), rgba(255,255,255,0) 24%),
+                linear-gradient(180deg, #f8f8f8 0%, #ededed 100%);
+            min-height: 100vh;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #111111;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d4d4d4;
+            border-radius: 16px;
+            font-size: 15px;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.92);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #111111;
+            box-shadow: 0 0 0 4px rgba(10, 10, 10, 0.08);
+            background: #ffffff;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #loginToggleText a,
+        #registerToggleText a {
+            color: #111111;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        #loginToggleText a:hover,
+        #registerToggleText a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+        <div class="w-full max-w-xl">
+            <section class="rounded-[36px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8 lg:p-10">
+                <div class="mb-8 flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Access Portal</p>
+                        <p class="mt-2 text-sm text-neutral-500">Sign in or create an account to continue.</p>
+                    </div>
+                    <div class="rounded-full border border-black/10 bg-neutral-50 p-1">
+                        <select id="languageSwitcher" class="min-w-[124px] rounded-full border border-transparent bg-transparent px-4 py-2 text-sm font-medium text-black focus:border-black/20 focus:outline-none focus:ring-0">
+                            <option value="en">English</option>
+                            <option value="th">ไทย</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="message" class="mb-6"></div>
+
+                <div id="loginForm">
+                    <h1 id="loginTitle" class="text-3xl font-semibold tracking-tight text-black">🔐 Login</h1>
+                    <p class="mt-2 text-sm text-neutral-500">Use your existing account to enter the workspace.</p>
+                    <form onsubmit="handleLogin(event)" class="mt-8">
+                        <div class="form-group">
+                            <label id="loginEmailLabel">Email</label>
+                            <input type="email" id="loginEmail" required placeholder="your@email.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label id="loginPasswordLabel">Password</label>
+                            <input type="password" id="loginPassword" required placeholder="••••••••">
+                        </div>
+
+                        <button type="submit" class="mt-2 w-full rounded-full bg-black px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-800" id="loginButton">Login</button>
+                    </form>
+
+                    <div class="mt-8 text-center text-sm text-neutral-500" id="loginToggleText">
+                        Don't have an account? <a onclick="toggleForms()" id="registerHereLink" class="cursor-pointer font-semibold text-black no-underline">Register here</a>
+                    </div>
+                </div>
+
+                <div id="registerForm" class="hidden">
+                    <h1 id="registerTitle" class="text-3xl font-semibold tracking-tight text-black">📝 Register</h1>
+                    <p class="mt-2 text-sm text-neutral-500">Create a customer account and start shopping right away.</p>
+                    <form onsubmit="handleRegister(event)" class="mt-8">
+                        <div class="form-group">
+                            <label id="regUsernameLabel">Username</label>
+                            <input type="text" id="regUsername" required placeholder="johndoe">
+                        </div>
+
+                        <div class="form-group">
+                            <label id="regEmailLabel">Email</label>
+                            <input type="email" id="regEmail" required placeholder="your@email.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label id="regPasswordLabel">Password</label>
+                            <input type="password" id="regPassword" required placeholder="••••••••">
+                        </div>
+
+                        <div class="form-group">
+                            <label id="regRoleLabel">Account Type</label>
+                            <select id="regRole" required>
+                                <option value="user" id="regRoleUserOption">👤 Customer (Buy products)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="mt-2 w-full rounded-full bg-black px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-800" id="registerButton">Register</button>
+                    </form>
+
+                    <div class="mt-8 text-center text-sm text-neutral-500" id="registerToggleText">
+                        Already have an account? <a onclick="toggleForms()" id="loginHereLink" class="cursor-pointer font-semibold text-black no-underline">Login here</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/frontend-assets/i18n.js"></script>
+    <script>
+        // Auto-detect API base URL based on current host
+        // Support both localhost, ngrok, and Docker Compose
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = hostname === 'localhost' || hostname === '127.0.0.1' ? ':8000' : '';
+        const API_BASE = `${protocol}//${hostname}${port}`;
+        const translations = {
+            en: {
+                title: "Login / Register - E-Commerce",
+                loginTitle: "🔐 Login",
+                loginEmailLabel: "Email",
+                loginPasswordLabel: "Password",
+                loginButton: "Login",
+                loginToggleText: `Don't have an account? <a onclick="toggleForms()" id="registerHereLink">Register here</a>`,
+                registerTitle: "📝 Register",
+                regUsernameLabel: "Username",
+                regEmailLabel: "Email",
+                regPasswordLabel: "Password",
+                regRoleLabel: "Account Type",
+                regRoleUserOption: "👤 Customer (Buy products)",
+                registerButton: "Register",
+                registerToggleText: `Already have an account? <a onclick="toggleForms()" id="loginHereLink">Login here</a>`,
+                loginLoading: "🔄 Logging in...",
+                loginSuccess: "✅ Login successful!",
+                loginFailed: "Login failed",
+                loginConnectionError: "❌ Connection error:",
+                registrationLoading: "🔄 Creating account...",
+                registrationSuccess: "✅ Registration successful! Redirecting...",
+                registrationFailed: "Registration failed",
+                registrationConnectionError: "❌ Connection error:"
+            },
+            th: {
+                title: "เข้าสู่ระบบ / สมัครสมาชิก - อีคอมเมิร์ซ",
+                loginTitle: "🔐 เข้าสู่ระบบ",
+                loginEmailLabel: "อีเมล",
+                loginPasswordLabel: "รหัสผ่าน",
+                loginButton: "เข้าสู่ระบบ",
+                loginToggleText: `ยังไม่มีบัญชี? <a onclick="toggleForms()" id="registerHereLink">สมัครสมาชิก</a>`,
+                registerTitle: "📝 สมัครสมาชิก",
+                regUsernameLabel: "ชื่อผู้ใช้",
+                regEmailLabel: "อีเมล",
+                regPasswordLabel: "รหัสผ่าน",
+                regRoleLabel: "ประเภทบัญชี",
+                regRoleUserOption: "👤 ลูกค้า (ซื้อสินค้า)",
+                registerButton: "สมัครสมาชิก",
+                registerToggleText: `มีบัญชีอยู่แล้ว? <a onclick="toggleForms()" id="loginHereLink">เข้าสู่ระบบ</a>`,
+                loginLoading: "🔄 กำลังเข้าสู่ระบบ...",
+                loginSuccess: "✅ เข้าสู่ระบบสำเร็จ!",
+                loginFailed: "เข้าสู่ระบบไม่สำเร็จ",
+                loginConnectionError: "❌ การเชื่อมต่อล้มเหลว:",
+                registrationLoading: "🔄 กำลังสร้างบัญชี...",
+                registrationSuccess: "✅ สมัครสมาชิกสำเร็จ! กำลังเปลี่ยนหน้า...",
+                registrationFailed: "สมัครสมาชิกไม่สำเร็จ",
+                registrationConnectionError: "❌ การเชื่อมต่อล้มเหลว:"
+            }
+        };
+        
+        function t(key) {
+            const language = window.EcomI18n.getLanguage();
+            return translations[language][key] || translations.en[key] || key;
+        }
+        
+        function applyTranslations() {
+            document.title = t("title");
+            document.getElementById("loginTitle").textContent = t("loginTitle");
+            document.getElementById("loginEmailLabel").textContent = t("loginEmailLabel");
+            document.getElementById("loginPasswordLabel").textContent = t("loginPasswordLabel");
+            document.getElementById("loginButton").textContent = t("loginButton");
+            document.getElementById("loginToggleText").innerHTML = t("loginToggleText");
+            document.getElementById("registerTitle").textContent = t("registerTitle");
+            document.getElementById("regUsernameLabel").textContent = t("regUsernameLabel");
+            document.getElementById("regEmailLabel").textContent = t("regEmailLabel");
+            document.getElementById("regPasswordLabel").textContent = t("regPasswordLabel");
+            document.getElementById("regRoleLabel").textContent = t("regRoleLabel");
+            document.getElementById("regRoleUserOption").textContent = t("regRoleUserOption");
+            document.getElementById("registerButton").textContent = t("registerButton");
+            document.getElementById("registerToggleText").innerHTML = t("registerToggleText");
+        }
+        
+        function toggleForms() {
+            document.getElementById("loginForm").classList.toggle("hidden");
+            document.getElementById("registerForm").classList.toggle("hidden");
+            document.getElementById("message").innerHTML = "";
+        }
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+            
+            try {
+                showMessage(t("loginLoading"), "success");
+                
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Store token in localStorage
+                    localStorage.setItem("auth_token", data.access_token);
+                    localStorage.setItem("user_id", data.user_id);
+                    
+                    showMessage(t("loginSuccess"), "success");
+                    
+                    // Redirect based on email
+                    setTimeout(() => {
+                        if (email.includes("admin")) {
+                            window.location.href = "/studio/";
+                        } else if (email.includes("provider")) {
+                            window.location.href = "/provider-panel.html";
+                        } else {
+                            window.location.href = "/user-store.html";
+                        }
+                    }, 800);
+                } else {
+                    try {
+                        const error = await response.json();
+                        const errorMsg = formatErrorMessage(error, t("loginFailed"));
+                        showMessage(`❌ ${errorMsg}`, "error");
+                    } catch (e) {
+                        showMessage(`❌ ${t("loginFailed")} (Status: ${response.status})`, "error");
+                    }
+                }
+            } catch (error) {
+                console.error("Login error:", error);
+                showMessage(`${t("loginConnectionError")} ${String(error.message)}`, "error");
+            }
+        }
+        
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById("regUsername").value;
+            const email = document.getElementById("regEmail").value;
+            const password = document.getElementById("regPassword").value;
+            const role = document.getElementById("regRole").value;
+            
+            try {
+                showMessage(t("registrationLoading"), "success");
+                
+                const response = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        email,
+                        username,
+                        password,
+                        role
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Store token
+                    localStorage.setItem("auth_token", data.access_token);
+                    localStorage.setItem("user_id", data.user_id);
+                    
+                    showMessage(t("registrationSuccess"), "success");
+                    
+                    // Redirect based on role
+                    setTimeout(() => {
+                        if (role === "admin") {
+                            window.location.href = "/admin-dashboard.html";
+                        } else if (role === "provider") {
+                            window.location.href = "/provider-panel.html";
+                        } else {
+                            window.location.href = "/user-store.html";
+                        }
+                    }, 1500);
+                } else {
+                    try {
+                        const error = await response.json();
+                        const errorMsg = formatErrorMessage(error, t("registrationFailed"));
+                        showMessage(`❌ ${errorMsg}`, "error");
+                    } catch (e) {
+                        showMessage(`❌ ${t("registrationFailed")} (Status: ${response.status})`, "error");
+                    }
+                }
+            } catch (error) {
+                console.error("Register error:", error);
+                showMessage(`${t("registrationConnectionError")} ${String(error.message)}`, "error");
+            }
+        }
+        
+        function showMessage(msg, type) {
+            const msgDiv = document.getElementById("message");
+            const styles = type === "success"
+                ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border border-red-200 bg-red-50 text-red-800";
+            msgDiv.innerHTML = `<div class="rounded-3xl px-5 py-4 text-center text-sm font-medium shadow-sm ${styles}">${msg}</div>`;
+        }
+
+        function formatErrorMessage(error, fallback) {
+            if (Array.isArray(error?.detail)) {
+                return error.detail.map(item => item.msg || "Validation error").join(", ");
+            }
+            if (typeof error?.detail === "string") {
+                return error.detail;
+            }
+            if (typeof error?.message === "string") {
+                return error.message;
+            }
+            return fallback;
+        }
+
+        window.EcomI18n.bindSelect(document.getElementById("languageSwitcher"));
+        window.EcomI18n.init(applyTranslations);
+    </script>
+</body>
+</html>

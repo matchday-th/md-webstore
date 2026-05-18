@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order History</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .back-button, .header-button {
+            background: rgba(255,255,255,0.12);
+            color: white;
+            padding: 10px 18px;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .orders-section {
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 24px;
+        }
+        .orders-title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .orders-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        .order-tabs {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin: 22px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .order-tab {
+            background: transparent;
+            border: none;
+            color: #374151;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 10px 4px 12px;
+            cursor: pointer;
+            border-bottom: 4px solid transparent;
+            white-space: nowrap;
+        }
+        .order-tab.active {
+            color: #e76f51;
+            border-bottom-color: #e76f51;
+        }
+        .order-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+        .order-filters input, .order-filters button {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+        }
+        .order-filters button {
+            background: #111827;
+            color: white;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .day-group { margin-bottom: 24px; }
+        .day-heading {
+            font-size: 15px;
+            font-weight: 800;
+            color: #4b5563;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .purchase-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 24px;
+            background: #fff;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+        .purchase-store-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .purchase-store-name {
+            font-size: 18px;
+            font-weight: 800;
+            color: #111827;
+        }
+        .purchase-status-text {
+            font-size: 16px;
+            font-weight: 800;
+            color: #e76f51;
+        }
+        .purchase-body {
+            display: grid;
+            grid-template-columns: 108px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+        .purchase-image {
+            width: 108px;
+            height: 108px;
+            border-radius: 16px;
+            object-fit: cover;
+            border: 1px solid #e5e7eb;
+            background: #f3f4f6;
+        }
+        .purchase-image.placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 34px;
+        }
+        .purchase-item-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+        .purchase-item-meta {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-bottom: 8px;
+        }
+        .purchase-item-price {
+            text-align: right;
+            font-size: 18px;
+            font-weight: 800;
+            color: #111827;
+        }
+        .purchase-item-qty {
+            font-size: 14px;
+            color: #9ca3af;
+            text-align: right;
+        }
+        .purchase-summary {
+            margin-top: 14px;
+            font-size: 16px;
+            color: #111827;
+            text-align: right;
+        }
+        .purchase-summary strong { font-size: 18px; }
+        .purchase-status-band {
+            margin-top: 14px;
+            border-radius: 16px;
+            padding: 14px 16px;
+            background: #edf9f7;
+            color: #5b9c98;
+            font-size: 16px;
+            font-weight: 800;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .purchase-status-band.awaiting_slip_verification,
+        .purchase-status-band.pending_payment,
+        .purchase-status-band.slip_rejected { background: #fff7ed; color: #c96b42; }
+        .purchase-status-band.paid { background: #eff6ff; color: #2563eb; }
+        .purchase-status-band.shipping { background: #edf9f7; color: #5b9c98; }
+        .purchase-status-band.completed { background: #ecfdf5; color: #15803d; }
+        .purchase-items-toggle {
+            margin-top: 10px;
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .purchase-extra-items {
+            margin-top: 14px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 12px;
+        }
+        .purchase-extra-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 0;
+            color: #4b5563;
+            font-size: 14px;
+        }
+        .purchase-empty {
+            border: 1px dashed #d1d5db;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            color: #6b7280;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 2000;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .lang-switcher select {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #d5dbe0;
+        }
+        @media (max-width: 768px) {
+            .orders-title { font-size: 30px; }
+            .purchase-body { grid-template-columns: 88px 1fr; }
+            .purchase-image { width: 88px; height: 88px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <button class="back-button" onclick="window.location.href='/user-store.html'" id="backButton">← กลับร้านค้า</button>
+                <div>
+                    <h1 id="pageTitle">📦 สถานะคำสั่งซื้อ</h1>
+                </div>
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center;">
+                <div class="lang-switcher">
+                    <select id="languageSwitcher">
+                        <option value="en">English</option>
+                        <option value="th">ไทย</option>
+                    </select>
+                </div>
+                <button onclick="handleLogout()" id="logoutButton" class="header-button">🚪 ออกจากระบบ</button>
+            </div>
+        </header>
+
+        <div class="orders-section">
+            <div>
+                <h2 id="orderHistoryTitle" class="orders-title">การซื้อของฉัน</h2>
+                <p id="orderHistorySubtitle" class="orders-subtitle">ดูประวัติการซื้อแบบรายวันและติดตามสถานะคำสั่งซื้อ</p>
+            </div>
+            <div class="order-tabs">
+                <button class="order-tab active" data-order-tab="all" onclick="setOrderStatusFilter('all', event)" id="orderTabAll">ทั้งหมด</button>
+                <button class="order-tab" data-order-tab="pending" onclick="setOrderStatusFilter('pending', event)" id="orderTabPending">ที่ต้องชำระ</button>
+                <button class="order-tab" data-order-tab="paid" onclick="setOrderStatusFilter('paid', event)" id="orderTabPaid">ที่ต้องจัดส่ง</button>
+                <button class="order-tab" data-order-tab="shipping" onclick="setOrderStatusFilter('shipping', event)" id="orderTabShipping">ที่ต้องได้รับ</button>
+                <button class="order-tab" data-order-tab="completed" onclick="setOrderStatusFilter('completed', event)" id="orderTabCompleted">สำเร็จ</button>
+            </div>
+            <div class="order-filters">
+                <input type="date" id="orderDateFrom">
+                <input type="date" id="orderDateTo">
+                <button onclick="applyOrderFilters()" id="applyOrderFilterButton">ใช้ตัวกรอง</button>
+                <button onclick="resetOrderFilters()" id="resetOrderFilterButton" style="background:#e5e7eb;color:#374151;">ล้างตัวกรอง</button>
+            </div>
+            <div id="orderHistoryContainer" class="loading">Loading...</div>
+        </div>
+    </div>
+
+    <script src="/frontend-assets/i18n.js"></script>
+    <script>
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = hostname === 'localhost' || hostname === '127.0.0.1' ? ':8000' : '';
+        const API_BASE = `${protocol}//${hostname}${port}`;
+        let userToken = localStorage.getItem("auth_token");
+        let orderHistoryRecords = [];
+        let currentOrderStatusFilter = "all";
+
+        const translations = {
+            en: {
+                title: "Order History",
+                pageTitle: "📦 Order Status",
+                backButton: "← Back to Store",
+                logoutButton: "🚪 Logout",
+                orderHistoryTitle: "My Purchases",
+                orderHistorySubtitle: "Review purchases day by day and track order progress",
+                orderTabAll: "All",
+                orderTabPending: "Pending Payment",
+                orderTabPaid: "To Ship",
+                orderTabShipping: "To Receive",
+                orderTabCompleted: "Completed",
+                applyOrderFilterButton: "Apply Filters",
+                resetOrderFilterButton: "Reset Filters",
+                awaitingSlipVerification: "⏳ Waiting for slip verification",
+                paidStatus: "✅ Paid",
+                shippingStatus: "🚚 Shipping",
+                completedStatus: "📦 Completed",
+                slipRejectedStatus: "❌ Slip rejected",
+                pendingPaymentStatus: "💬 Waiting for payment",
+                noOrdersYet: "No orders yet",
+                pleaseLogin: "❌ Please login first",
+                errorPrefix: "❌ Error:"
+            },
+            th: {
+                title: "สถานะคำสั่งซื้อ",
+                pageTitle: "📦 สถานะคำสั่งซื้อ",
+                backButton: "← กลับร้านค้า",
+                logoutButton: "🚪 ออกจากระบบ",
+                orderHistoryTitle: "การซื้อของฉัน",
+                orderHistorySubtitle: "ดูประวัติการซื้อแบบรายวันและติดตามสถานะคำสั่งซื้อ",
+                orderTabAll: "ทั้งหมด",
+                orderTabPending: "ที่ต้องชำระ",
+                orderTabPaid: "ที่ต้องจัดส่ง",
+                orderTabShipping: "ที่ต้องได้รับ",
+                orderTabCompleted: "สำเร็จ",
+                applyOrderFilterButton: "ใช้ตัวกรอง",
+                resetOrderFilterButton: "ล้างตัวกรอง",
+                awaitingSlipVerification: "⏳ รอยืนยันสลิป",
+                paidStatus: "✅ ชำระแล้ว",
+                shippingStatus: "🚚 กำลังจัดส่ง",
+                completedStatus: "📦 เสร็จสิ้น",
+                slipRejectedStatus: "❌ สลิปไม่ผ่าน",
+                pendingPaymentStatus: "💬 รอชำระเงิน",
+                noOrdersYet: "ยังไม่มีคำสั่งซื้อ",
+                pleaseLogin: "❌ กรุณาเข้าสู่ระบบก่อน",
+                errorPrefix: "❌ ข้อผิดพลาด:"
+            }
+        };
+
+        function t(key) {
+            const language = window.EcomI18n.getLanguage();
+            return translations[language][key] || translations.en[key] || key;
+        }
+
+        function applyTranslations() {
+            document.title = t("title");
+            ["pageTitle","backButton","logoutButton","orderHistoryTitle","orderHistorySubtitle","orderTabAll","orderTabPending","orderTabPaid","orderTabShipping","orderTabCompleted","applyOrderFilterButton","resetOrderFilterButton"].forEach((id) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = t(id);
+            });
+        }
+
+        function formatMoney(amount) {
+            return "$" + Number(amount || 0).toFixed(2);
+        }
+
+        function orderStatusText(status) {
+            const map = {
+                awaiting_slip_verification: t("awaitingSlipVerification"),
+                paid: t("paidStatus"),
+                shipping: t("shippingStatus"),
+                completed: t("completedStatus"),
+                slip_rejected: t("slipRejectedStatus"),
+                pending_payment: t("pendingPaymentStatus")
+            };
+            return map[status] || status;
+        }
+
+        function statusBandText(order) {
+            if (order.status_label === "completed") return `${t("completedStatus")} ${formatShortThaiDate(order.created_at)}`;
+            if (order.status_label === "shipping") return `${t("shippingStatus")} ${formatShortThaiDate(order.created_at)}`;
+            if (order.status_label === "paid") return t("paidStatus");
+            if (order.status_label === "awaiting_slip_verification") return t("awaitingSlipVerification");
+            if (order.status_label === "slip_rejected") return t("slipRejectedStatus");
+            return t("pendingPaymentStatus");
+        }
+
+        function formatLongThaiDate(dateString) {
+            if (!dateString) return "-";
+            return new Date(dateString).toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" });
+        }
+
+        function formatShortThaiDate(dateString) {
+            if (!dateString) return "-";
+            return new Date(dateString).toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+        }
+
+        function getOrderTabMatch(order, tab) {
+            const status = order.status_label;
+            if (tab === "all") return true;
+            if (tab === "pending") return ["pending_payment", "awaiting_slip_verification", "slip_rejected"].includes(status);
+            if (tab === "paid") return status === "paid";
+            if (tab === "shipping") return status === "shipping";
+            if (tab === "completed") return status === "completed";
+            return true;
+        }
+
+        function setOrderStatusFilter(tab, event) {
+            currentOrderStatusFilter = tab;
+            document.querySelectorAll(".order-tab").forEach((button) => button.classList.remove("active"));
+            if (event?.currentTarget) event.currentTarget.classList.add("active");
+            renderOrderHistory();
+        }
+
+        function resetOrderFilters() {
+            document.getElementById("orderDateFrom").value = "";
+            document.getElementById("orderDateTo").value = "";
+            currentOrderStatusFilter = "all";
+            document.querySelectorAll(".order-tab").forEach((button) => button.classList.remove("active"));
+            document.querySelector(`.order-tab[data-order-tab="all"]`)?.classList.add("active");
+            renderOrderHistory();
+        }
+
+        function applyOrderFilters() {
+            renderOrderHistory();
+        }
+
+        function orderMatchesDateRange(order) {
+            const fromValue = document.getElementById("orderDateFrom").value;
+            const toValue = document.getElementById("orderDateTo").value;
+            if (!fromValue && !toValue) return true;
+            if (!order.created_at) return false;
+            const created = new Date(order.created_at);
+            const createdDateOnly = new Date(created.getFullYear(), created.getMonth(), created.getDate());
+            if (fromValue) {
+                const fromDate = new Date(fromValue);
+                if (createdDateOnly < fromDate) return false;
+            }
+            if (toValue) {
+                const toDate = new Date(toValue);
+                if (createdDateOnly > toDate) return false;
+            }
+            return true;
+        }
+
+        function groupOrdersByDay(orders) {
+            const groups = new Map();
+            orders.forEach((order) => {
+                const key = order.created_at ? new Date(order.created_at).toISOString().slice(0, 10) : "unknown";
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(order);
+            });
+            return Array.from(groups.entries())
+                .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+                .map(([dateKey, items]) => ({ dateKey, items }));
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        function renderOrderCard(order) {
+            const firstItem = order.items[0] || {};
+            const imageMarkup = firstItem.image_url
+                ? `<img class="purchase-image" src="${firstItem.image_url}" alt="${escapeHtml(firstItem.name || "")}">`
+                : `<div class="purchase-image placeholder">📦</div>`;
+            const storeName = firstItem.provider_name || firstItem.provider_id || "-";
+            const extraCount = Math.max((order.items?.length || 0) - 1, 0);
+            const extraItemsMarkup = extraCount
+                ? `
+                    <button class="purchase-items-toggle" onclick="toggleOrderItems('${order.order_id}')">
+                        ดูเพิ่มเติม
+                        <span id="toggleArrow-${order.order_id}">⌄</span>
+                    </button>
+                    <div id="extraItems-${order.order_id}" class="purchase-extra-items" style="display:none;">
+                        ${order.items.slice(1).map((item) => `
+                            <div class="purchase-extra-item">
+                                <div>
+                                    <strong>${escapeHtml(item.name)}</strong><br>
+                                    <small>ร้านค้า: ${escapeHtml(item.provider_name || item.provider_id || "-")}</small>
+                                </div>
+                                <div>x${item.quantity} · ${formatMoney(item.price_at_purchase * item.quantity)}</div>
+                            </div>
+                        `).join("")}
+                    </div>
+                `
+                : "";
+            return `
+                <div class="purchase-card">
+                    <div class="purchase-store-row">
+                        <div class="purchase-store-name">${escapeHtml(storeName)}</div>
+                        <div class="purchase-status-text">${orderStatusText(order.status_label)}</div>
+                    </div>
+                    <div class="purchase-body">
+                        ${imageMarkup}
+                        <div>
+                            <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+                                <div>
+                                    <div class="purchase-item-title">${escapeHtml(firstItem.name || "Unknown product")}</div>
+                                    <div class="purchase-item-meta">${order.billing?.invoice_number || order.order_id}</div>
+                                </div>
+                                <div>
+                                    <div class="purchase-item-qty">x${firstItem.quantity || 0}</div>
+                                    <div class="purchase-item-price">${formatMoney((firstItem.price_at_purchase || 0) * (firstItem.quantity || 0))}</div>
+                                </div>
+                            </div>
+                            ${extraItemsMarkup}
+                            <div class="purchase-summary">สินค้ารวม ${(order.items || []).length} รายการ: <strong>${formatMoney(order.total_amount)}</strong></div>
+                            <div class="purchase-status-band ${order.status_label}">
+                                <span>${statusBandText(order)}</span>
+                                <span>›</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderOrderHistory() {
+            const container = document.getElementById("orderHistoryContainer");
+            const filteredOrders = orderHistoryRecords
+                .filter((order) => getOrderTabMatch(order, currentOrderStatusFilter))
+                .filter(orderMatchesDateRange);
+            if (!filteredOrders.length) {
+                container.innerHTML = `<div class="purchase-empty">${t("noOrdersYet")}</div>`;
+                return;
+            }
+            const grouped = groupOrdersByDay(filteredOrders);
+            container.innerHTML = grouped.map(({ dateKey, items }) => `
+                <div class="day-group">
+                    <div class="day-heading">${dateKey === "unknown" ? "-" : formatLongThaiDate(dateKey)}</div>
+                    ${items.map(renderOrderCard).join("")}
+                </div>
+            `).join("");
+        }
+
+        function toggleOrderItems(orderId) {
+            const panel = document.getElementById(`extraItems-${orderId}`);
+            const arrow = document.getElementById(`toggleArrow-${orderId}`);
+            if (!panel || !arrow) return;
+            const isHidden = panel.style.display === "none";
+            panel.style.display = isHidden ? "block" : "none";
+            arrow.textContent = isHidden ? "⌃" : "⌄";
+        }
+
+        async function loadOrderHistory() {
+            if (!userToken) {
+                document.getElementById("orderHistoryContainer").innerHTML = `<p class="loading">${t("pleaseLogin")}</p>`;
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/api/user/orders`, {
+                    headers: { "Authorization": `Bearer ${userToken}` }
+                });
+                if (!response.ok) throw new Error("Unable to load orders");
+                const data = await response.json();
+                orderHistoryRecords = data.orders || [];
+                renderOrderHistory();
+            } catch (error) {
+                showMessage(`${t("errorPrefix")} ${error.message}`, "error");
+            }
+        }
+
+        function showMessage(msg, type) {
+            const div = document.createElement("div");
+            div.className = `message ${type}`;
+            div.textContent = msg;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("auth_token");
+            localStorage.removeItem("user_id");
+            localStorage.removeItem("cart");
+            window.location.href = "/login.html";
+        }
+
+        window.EcomI18n.bindSelect(document.getElementById("languageSwitcher"));
+        window.EcomI18n.init(applyTranslations);
+        window.addEventListener("load", async () => {
+            applyTranslations();
+            await loadOrderHistory();
+        });
+    </script>
+</body>
+</html>
