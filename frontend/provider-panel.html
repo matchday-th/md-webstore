@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Provider Panel - Add Products & Services</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -363,8 +364,9 @@
                     </div>
                 </div>
                 <div class="mb-6 flex flex-wrap gap-3">
-                    <button type="button" class="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" onclick="loadSalesHistory()">Load Sales</button>
-                    <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="resetHistoryFilters('sales')">Reset Filters</button>
+                    <button type="button" class="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" onclick="loadSalesHistory()" id="loadSalesButton">Load Sales</button>
+                    <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="resetHistoryFilters('sales')" id="resetSalesButton">Reset Filters</button>
+                    <button type="button" class="rounded-full border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100" onclick="exportSalesHistoryToExcel()" id="exportSalesButton">Export Excel</button>
                 </div>
                 <div id="salesHistoryTable">
                     <p class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-10 text-center text-neutral-500">No sales loaded yet.</p>
@@ -698,6 +700,13 @@
                 salesMonthLabel: "Month",
                 salesYearLabel: "Year",
                 salesCategoryLabel: "Category",
+                loadSalesButton: "Load Sales",
+                resetSalesButton: "Reset Filters",
+                exportSalesButton: "Export Excel",
+                payment: "Payment",
+                method: "Method",
+                noSalesToExport: "No sales data to export.",
+                salesExportFileName: "sales-history",
                 restockHistoryTitle: "📥 Restock History",
                 restockDateLabel: "Select Day",
                 restockMonthLabel: "Month",
@@ -806,6 +815,13 @@
                 salesMonthLabel: "เดือน",
                 salesYearLabel: "ปี",
                 salesCategoryLabel: "หมวดหมู่",
+                loadSalesButton: "โหลดการขาย",
+                resetSalesButton: "ล้างตัวกรอง",
+                exportSalesButton: "Export Excel",
+                payment: "การชำระเงิน",
+                method: "ช่องทาง",
+                noSalesToExport: "ไม่มีข้อมูลการขายสำหรับส่งออก",
+                salesExportFileName: "ประวัติการขาย",
                 restockHistoryTitle: "📥 ประวัติเติมสินค้า",
                 restockDateLabel: "เลือกวัน",
                 restockMonthLabel: "เดือน",
@@ -890,7 +906,7 @@
                 "addStockLabel","addImageLabel","addDescriptionLabel","addProductButton","manageStockTitle",
                 "selectProductLabel","quantityLabel","reasonLabel","addStockButton","myProductsTitle",
                 "filterCategoryLabel","filterShopLabel","salesHistoryTitle","salesDateLabel","salesMonthLabel","salesYearLabel",
-                "salesCategoryLabel","restockHistoryTitle","restockDateLabel","restockMonthLabel",
+                "salesCategoryLabel","loadSalesButton","resetSalesButton","exportSalesButton","restockHistoryTitle","restockDateLabel","restockMonthLabel",
                 "restockYearLabel","restockCategoryLabel","slipReviewTitle",
                 "editModalTitle","editNameLabel","editSkuLabel","editCategoryLabel","editPriceLabel",
                 "editStockLabel","editImageLabel","editDescriptionLabel","deleteButton","cancelButton","saveButton"
@@ -1503,6 +1519,51 @@
             }
         }
 
+        function exportSalesHistoryToExcel() {
+            if (!salesHistory.length) {
+                showMessage(t('noSalesToExport'), 'error');
+                return;
+            }
+
+            const rows = salesHistory.map((entry, index) => ({
+                '#': index + 1,
+                [t('date')]: formatDate(entry.created_at),
+                [t('invoice')]: [entry.invoice_number || '-', entry.receipt_number || '-'].filter(Boolean).join('\n'),
+                [t('customer')]: [entry.customer_name || '-', entry.customer_email || ''].filter(Boolean).join('\n'),
+                [t('payment')]: entry.payment_status || '-',
+                [t('method')]: entry.payment_history?.[entry.payment_history.length - 1]?.channel || '-',
+                [t('total')]: parseFloat(entry.grand_total || entry.provider_total || 0)
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+            for (let row = range.s.r + 1; row <= range.e.r; row += 1) {
+                const totalCell = XLSX.utils.encode_cell({ r: row, c: 6 });
+                if (worksheet[totalCell]) {
+                    worksheet[totalCell].t = 'n';
+                    worksheet[totalCell].z = '$0.00';
+                }
+            }
+
+            worksheet['!cols'] = [
+                { wch: 6 },
+                { wch: 24 },
+                { wch: 28 },
+                { wch: 30 },
+                { wch: 18 },
+                { wch: 18 },
+                { wch: 14 }
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales History');
+
+            const today = new Date();
+            const pad = (value) => String(value).padStart(2, '0');
+            const fileDate = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
+            XLSX.writeFile(workbook, t('salesExportFileName') + '-' + fileDate + '.xlsx');
+        }
+
         async function loadSalesHistory() {
             try {
                 const params = getHistoryFilterParams('sales');
@@ -1539,8 +1600,8 @@
                                         <th class="px-6 py-4">${t('date')}</th>
                                         <th class="px-6 py-4">${t('invoice')}</th>
                                         <th class="px-6 py-4">${t('customer')}</th>
-                                        <th class="px-6 py-4">Payment</th>
-                                        <th class="px-6 py-4">Method</th>
+                                        <th class="px-6 py-4">${t('payment')}</th>
+                                        <th class="px-6 py-4">${t('method')}</th>
                                         <th class="px-6 py-4">${t('total')}</th>
                                         <th class="px-6 py-4">${t('action')}</th>
                                     </tr>
