@@ -138,6 +138,10 @@ def normalize_order_status(value: Optional[str]) -> str:
     allowed_statuses = {"pending", "confirmed", "shipped", "completed", "cancelled", "packed"}
     return normalized if normalized in allowed_statuses else "pending"
 
+class UserProfileUpdatePayload(BaseModel):
+    gender: Optional[str] = None
+    age: Optional[int] = Field(default=None, ge=0, le=120)
+
 def serialize_profile(user: dict) -> dict:
     return {
         "id": str(user["_id"]),
@@ -146,6 +150,8 @@ def serialize_profile(user: dict) -> dict:
         "role": str(user.get("role", "user")).title(),
         "phone": user.get("phone", ""),
         "address": user.get("address", ""),
+        "gender": user.get("gender", ""),
+        "age": user.get("age"),
     }
 
 def serialize_product(product: dict) -> dict:
@@ -2229,6 +2235,50 @@ async def user_create_order(
             detail="Error processing order"
         )
 
+@app.get("/api/user/profile")
+async def user_get_profile(current_user: str = Depends(get_current_user)):
+    """User: Get own profile"""
+    profile = await UserDB.get_user_by_id(current_user)
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found"
+        )
+    return {"profile": serialize_profile(profile)}
+
+@app.put("/api/user/profile")
+async def user_update_profile(
+    payload: UserProfileUpdatePayload,
+    current_user: str = Depends(get_current_user)
+):
+    """User: Update own profile details"""
+    allowed_genders = {"male", "female", "other", "prefer_not_to_say"}
+    normalized_gender = (payload.gender or "").strip().lower()
+
+    if normalized_gender and normalized_gender not in allowed_genders:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid gender"
+        )
+
+    result = await db.db["users"].update_one(
+        {"_id": parse_object_id(current_user, "user_id")},
+        {"$set": {
+            "gender": normalized_gender,
+            "age": int(payload.age) if payload.age is not None else None,
+            "updated_at": datetime.utcnow(),
+        }}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found"
+        )
+
+    profile = await UserDB.get_user_by_id(current_user)
+    return {"profile": serialize_profile(profile)}
+
 @app.get("/api/user/orders")
 async def user_get_orders(current_user: str = Depends(get_current_user)):
     """User: Get own orders"""
@@ -2625,6 +2675,14 @@ async def serve_user_store():
 async def serve_order_history():
     """Serve user order history page"""
     file = os.path.join(frontend_path, "order-history.html")
+    if os.path.exists(file):
+        return FileResponse(file, media_type="text/html")
+    raise HTTPException(status_code=404, detail="Not Found")
+
+@app.get("/user-profile.html")
+async def serve_user_profile():
+    """Serve user profile page"""
+    file = os.path.join(frontend_path, "user-profile.html")
     if os.path.exists(file):
         return FileResponse(file, media_type="text/html")
     raise HTTPException(status_code=404, detail="Not Found")

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["Prompt", "ui-sans-serif", "system-ui", "sans-serif"]
+                    },
+                    boxShadow: {
+                        panel: "0 24px 80px rgba(0, 0, 0, 0.10)"
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', ui-sans-serif, system-ui, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,0.88), rgba(255,255,255,0) 28%),
+                radial-gradient(circle at bottom right, rgba(255,255,255,0.72), rgba(255,255,255,0) 24%),
+                linear-gradient(180deg, #f8f8f8 0%, #ededed 100%);
+            min-height: 100vh;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #111111;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d4d4d4;
+            border-radius: 16px;
+            font-size: 15px;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.92);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #111111;
+            box-shadow: 0 0 0 4px rgba(10, 10, 10, 0.08);
+            background: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+        <div class="w-full max-w-2xl">
+            <section class="rounded-[36px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8 lg:p-10">
+                <div class="mb-8 flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500" id="eyebrowLabel">Profile</p>
+                        <h1 id="pageTitle" class="mt-2 text-3xl font-semibold tracking-tight text-black">👤 User Profile</h1>
+                        <p id="pageSubtitle" class="mt-2 text-sm text-neutral-500">Update your personal details for this account.</p>
+                    </div>
+                    <div class="rounded-full border border-black/10 bg-neutral-50 p-1">
+                        <select id="languageSwitcher" class="min-w-[124px] rounded-full border border-transparent bg-transparent px-4 py-2 text-sm font-medium text-black focus:border-black/20 focus:outline-none focus:ring-0">
+                            <option value="en">English</option>
+                            <option value="th">ไทย</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="message" class="mb-6"></div>
+
+                <div class="mb-8 grid gap-4 rounded-[28px] border border-black/10 bg-neutral-50 p-5 sm:grid-cols-2">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500" id="profileNameLabel">Name</p>
+                        <div id="profileNameValue" class="mt-2 text-lg font-semibold text-black">-</div>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500" id="profileEmailLabel">Email</p>
+                        <div id="profileEmailValue" class="mt-2 text-lg font-semibold text-black">-</div>
+                    </div>
+                </div>
+
+                <form id="profileForm" onsubmit="saveProfile(event)">
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div class="form-group">
+                            <label id="genderLabel" for="gender">Gender</label>
+                            <select id="gender" name="gender">
+                                <option value="" id="genderOptionEmpty">Select gender</option>
+                                <option value="male" id="genderOptionMale">Male</option>
+                                <option value="female" id="genderOptionFemale">Female</option>
+                                <option value="other" id="genderOptionOther">Other</option>
+                                <option value="prefer_not_to_say" id="genderOptionPreferNot">Prefer not to say</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label id="ageLabel" for="age">Age</label>
+                            <input type="number" id="age" name="age" min="0" max="120" placeholder="18">
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex flex-wrap gap-3">
+                        <button type="button" onclick="goBackToStore()" id="backButton" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black">Back to Store</button>
+                        <button type="submit" id="saveButton" class="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800">Save Profile</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <script src="/frontend-assets/i18n.js"></script>
+    <script>
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = hostname === 'localhost' || hostname === '127.0.0.1' ? ':8000' : '';
+        const API_BASE = protocol + '//' + hostname + port;
+        const token = localStorage.getItem('auth_token');
+        let currentProfile = null;
+
+        const translations = {
+            en: {
+                title: 'User Profile',
+                eyebrowLabel: 'Profile',
+                pageTitle: '👤 User Profile',
+                pageSubtitle: 'Update your personal details for this account.',
+                profileNameLabel: 'Name',
+                profileEmailLabel: 'Email',
+                genderLabel: 'Gender',
+                ageLabel: 'Age',
+                genderOptionEmpty: 'Select gender',
+                genderOptionMale: 'Male',
+                genderOptionFemale: 'Female',
+                genderOptionOther: 'Other',
+                genderOptionPreferNot: 'Prefer not to say',
+                backButton: 'Back to Store',
+                saveButton: 'Save Profile',
+                loadingProfile: 'Loading profile...',
+                profileSaved: '✅ Profile saved successfully!',
+                profileLoadFailed: '❌ Unable to load profile',
+                unauthorized: '❌ Please login again',
+                errorPrefix: '❌ Error:'
+            },
+            th: {
+                title: 'โปรไฟล์ผู้ใช้',
+                eyebrowLabel: 'โปรไฟล์',
+                pageTitle: '👤 โปรไฟล์ผู้ใช้',
+                pageSubtitle: 'อัปเดตข้อมูลส่วนตัวของบัญชีนี้',
+                profileNameLabel: 'ชื่อ',
+                profileEmailLabel: 'อีเมล',
+                genderLabel: 'เพศ',
+                ageLabel: 'อายุ',
+                genderOptionEmpty: 'เลือกเพศ',
+                genderOptionMale: 'ชาย',
+                genderOptionFemale: 'หญิง',
+                genderOptionOther: 'อื่น ๆ',
+                genderOptionPreferNot: 'ไม่ต้องการระบุ',
+                backButton: 'กลับหน้าร้าน',
+                saveButton: 'บันทึกโปรไฟล์',
+                loadingProfile: 'กำลังโหลดโปรไฟล์...',
+                profileSaved: '✅ บันทึกโปรไฟล์สำเร็จ!',
+                profileLoadFailed: '❌ โหลดโปรไฟล์ไม่สำเร็จ',
+                unauthorized: '❌ กรุณาเข้าสู่ระบบใหม่',
+                errorPrefix: '❌ ข้อผิดพลาด:'
+            }
+        };
+
+        function t(key) {
+            const language = window.EcomI18n.getLanguage();
+            return translations[language][key] || translations.en[key] || key;
+        }
+
+        function applyTranslations() {
+            document.title = t('title');
+            ['eyebrowLabel','pageTitle','pageSubtitle','profileNameLabel','profileEmailLabel','genderLabel','ageLabel','genderOptionEmpty','genderOptionMale','genderOptionFemale','genderOptionOther','genderOptionPreferNot','backButton','saveButton'].forEach((id) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = t(id);
+                }
+            });
+            document.getElementById('age').placeholder = '18';
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            const classes = type === 'success'
+                ? 'border border-emerald-200 bg-emerald-50 text-emerald-800'
+                : 'border border-red-200 bg-red-50 text-red-800';
+            messageDiv.innerHTML = '<div class="rounded-3xl px-5 py-4 text-sm font-medium shadow-sm ' + classes + '">' + message + '</div>';
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 4000);
+        }
+
+        function goBackToStore() {
+            window.location.href = '/user-store.html';
+        }
+
+        async function loadProfile() {
+            if (!token) {
+                showMessage(t('unauthorized'), 'error');
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 1000);
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE + '/api/user/profile', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                if (response.status === 401) {
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_id');
+                    showMessage(t('unauthorized'), 'error');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 1000);
+                    return;
+                }
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || t('profileLoadFailed'));
+                }
+
+                const data = await response.json();
+                currentProfile = data.profile || null;
+
+                document.getElementById('profileNameValue').textContent = currentProfile?.name || '-';
+                document.getElementById('profileEmailValue').textContent = currentProfile?.email || '-';
+                document.getElementById('gender').value = currentProfile?.gender || '';
+                document.getElementById('age').value = currentProfile?.age ?? '';
+            } catch (error) {
+                showMessage(t('errorPrefix') + ' ' + error.message, 'error');
+            }
+        }
+
+        async function saveProfile(event) {
+            event.preventDefault();
+
+            const payload = {
+                gender: document.getElementById('gender').value,
+                age: document.getElementById('age').value === '' ? null : parseInt(document.getElementById('age').value, 10)
+            };
+
+            try {
+                const response = await fetch(API_BASE + '/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Unable to save profile');
+                }
+
+                const data = await response.json();
+                currentProfile = data.profile || null;
+                document.getElementById('profileNameValue').textContent = currentProfile?.name || '-';
+                document.getElementById('profileEmailValue').textContent = currentProfile?.email || '-';
+                showMessage(t('profileSaved'), 'success');
+            } catch (error) {
+                showMessage(t('errorPrefix') + ' ' + error.message, 'error');
+            }
+        }
+
+        window.EcomI18n.bindSelect(document.getElementById('languageSwitcher'));
+        window.EcomI18n.init(applyTranslations);
+        window.addEventListener('load', async () => {
+            applyTranslations();
+            await loadProfile();
+        });
+    </script>
+</body>
+</html>
