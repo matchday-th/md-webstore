@@ -252,7 +252,7 @@
             </div>
         </div>
 
-        <div class="mb-6 flex justify-end">
+        <div class="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div class="inline-flex w-full flex-col gap-3 rounded-[28px] border border-black/10 bg-white/85 p-3 shadow-panel backdrop-blur sm:w-auto sm:flex-row">
                 <button class="tab-button rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-600 hover:border-black hover:text-black active" onclick="switchTab('inventory-hub', event)" id="tabInventoryHub">
                     📦 Inventory
@@ -262,6 +262,19 @@
                 </button>
                 <button class="tab-button rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-600 hover:border-black hover:text-black" onclick="switchTab('restock-history', event)" id="tabRestockHistory">
                     📥 Restock History
+                </button>
+            </div>
+
+            <div class="grid w-full gap-4 xl:max-w-3xl xl:grid-cols-2">
+                <button type="button" class="rounded-[28px] border border-black/10 bg-white/85 px-6 py-5 text-left shadow-panel backdrop-blur transition hover:-translate-y-0.5 hover:border-black" onclick="openProductModal()">
+                    <div class="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Quick Action</div>
+                    <div id="openAddProductButton" class="mt-2 text-xl font-semibold text-black">➕ Create Product</div>
+                    <p class="mt-2 text-sm text-neutral-500">Open a popup to create a new product under the selected shop.</p>
+                </button>
+                <button type="button" class="rounded-[28px] border border-black/10 bg-white/85 px-6 py-5 text-left shadow-panel backdrop-blur transition hover:-translate-y-0.5 hover:border-black" onclick="openRestockModal()">
+                    <div class="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Quick Action</div>
+                    <div id="openRestockButton" class="mt-2 text-xl font-semibold text-black">📦 Update Stock</div>
+                    <p class="mt-2 text-sm text-neutral-500">Open a popup to refill stock and log the reason immediately.</p>
                 </button>
             </div>
         </div>
@@ -274,19 +287,6 @@
                         <h2 id="inventoryHubTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">📦 Inventory Workspace</h2>
                     </div>
                     <p class="max-w-md text-sm text-neutral-500">Open quick actions for new products and stock refills, then review your full catalog below.</p>
-                </div>
-
-                <div class="mb-8 grid gap-4 lg:grid-cols-2">
-                    <button type="button" class="rounded-[28px] border border-black/10 bg-white px-6 py-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-black" onclick="openProductModal()">
-                        <div class="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Quick Action</div>
-                        <div id="openAddProductButton" class="mt-2 text-xl font-semibold text-black">➕ Create Product</div>
-                        <p class="mt-2 text-sm text-neutral-500">Open a popup to create a new product under the selected shop.</p>
-                    </button>
-                    <button type="button" class="rounded-[28px] border border-black/10 bg-white px-6 py-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-black" onclick="openRestockModal()">
-                        <div class="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Quick Action</div>
-                        <div id="openRestockButton" class="mt-2 text-xl font-semibold text-black">📦 Update Stock</div>
-                        <p class="mt-2 text-sm text-neutral-500">Open a popup to refill stock and log the reason immediately.</p>
-                    </button>
                 </div>
 
                 <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
