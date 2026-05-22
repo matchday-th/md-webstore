@@ -283,6 +283,21 @@
                     </div>
                     <p id="dashboardSubtitle" class="max-w-md text-sm text-neutral-500">Track your catalog, category coverage, revenue, and order volume from one overview.</p>
                 </div>
+                <div class="mb-6 grid gap-4 lg:grid-cols-[minmax(0,180px)_minmax(0,180px)_auto] lg:items-end">
+                    <div>
+                        <label id="dashboardMonthLabel">Month</label>
+                        <select id="dashboardMonthFilter"></select>
+                    </div>
+                    <div>
+                        <label id="dashboardYearLabel">Year</label>
+                        <select id="dashboardYearFilter"></select>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="button" class="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" onclick="loadDashboard()" id="dashboardApplyButton">Load Dashboard</button>
+                        <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="resetDashboardFilters()" id="dashboardAllButton">View All</button>
+                    </div>
+                </div>
+                <div id="dashboardPeriodLabel" class="mb-6 text-sm font-medium text-neutral-500">Showing all data</div>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <div class="rounded-[28px] border border-black/10 bg-white/85 p-6 shadow-panel backdrop-blur">
                         <h3 id="statProductsLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">📦 My Products</h3>
@@ -850,6 +865,13 @@
                 tabDashboard: "📊 Dashboard",
                 dashboardTitle: "📊 Dashboard",
                 dashboardSubtitle: "Track your catalog, category coverage, revenue, and order volume from one overview.",
+                dashboardMonthLabel: "Month",
+                dashboardYearLabel: "Year",
+                dashboardApplyButton: "Load Dashboard",
+                dashboardAllButton: "View All",
+                dashboardAllPeriod: "Showing all data",
+                dashboardPeriodMonthYear: "Showing {month}/{year}",
+                dashboardPeriodYear: "Showing year {year}",
                 tabInventoryHub: "📦 Inventory",
                 tabSalesHistory: "🧾 Sales History",
                 tabRestockHistory: "📥 Restock History",
@@ -967,6 +989,13 @@
                 tabDashboard: "📊 แดชบอร์ด",
                 dashboardTitle: "📊 แดชบอร์ด",
                 dashboardSubtitle: "ดูภาพรวมสินค้า หมวดหมู่ รายได้ และจำนวนคำสั่งซื้อในหน้าเดียว",
+                dashboardMonthLabel: "เดือน",
+                dashboardYearLabel: "ปี",
+                dashboardApplyButton: "โหลดแดชบอร์ด",
+                dashboardAllButton: "ดูทั้งหมด",
+                dashboardAllPeriod: "กำลังแสดงข้อมูลทั้งหมด",
+                dashboardPeriodMonthYear: "กำลังแสดงเดือน {month}/{year}",
+                dashboardPeriodYear: "กำลังแสดงปี {year}",
                 tabInventoryHub: "📦 คลังสินค้า",
                 tabSalesHistory: "🧾 ประวัติการขาย",
                 tabRestockHistory: "📥 ประวัติเติมสินค้า",
@@ -1154,7 +1183,7 @@
             document.title = t("title");
             [
                 "pageTitle","pageSubtitle","logoutButton","statProductsLabel","statStockLabel",
-                "statRevenueLabel","statOrdersLabel","tabDashboard","dashboardTitle","dashboardSubtitle","tabInventoryHub","tabSalesHistory","tabRestockHistory","tabProviderSettings",
+                "statRevenueLabel","statOrdersLabel","tabDashboard","dashboardTitle","dashboardSubtitle","dashboardMonthLabel","dashboardYearLabel","dashboardApplyButton","dashboardAllButton","tabInventoryHub","tabSalesHistory","tabRestockHistory","tabProviderSettings",
                 "inventoryHubTitle","openAddProductButton","openRestockButton","providerSettingsTitle","providerSettingsSubtitle",
                 "addProductTitle","addNameLabel","addSkuLabel","addCategoryLabel","addPriceLabel",
                 "addStockLabel","addImageLabel","addDescriptionLabel","addProductButton","manageStockTitle",
@@ -1460,6 +1489,28 @@
             } else {
                 loadRestockHistory();
             }
+        }
+
+        function resetDashboardFilters() {
+            const monthSelect = document.getElementById('dashboardMonthFilter');
+            const yearSelect = document.getElementById('dashboardYearFilter');
+            if (monthSelect) monthSelect.value = '';
+            if (yearSelect) yearSelect.value = '';
+            loadDashboard();
+        }
+
+        function updateDashboardPeriodLabel(monthValue, yearValue) {
+            const label = document.getElementById('dashboardPeriodLabel');
+            if (!label) return;
+            if (yearValue && monthValue) {
+                label.textContent = translateTemplate('dashboardPeriodMonthYear', { month: monthValue, year: yearValue });
+                return;
+            }
+            if (yearValue) {
+                label.textContent = translateTemplate('dashboardPeriodYear', { year: yearValue });
+                return;
+            }
+            label.textContent = t('dashboardAllPeriod');
         }
 
         function getStatusBadgeClass(value) {
@@ -2332,7 +2383,14 @@
 
         async function loadDashboard() {
             try {
-                const response = await fetch(`${API_BASE}/api/provider/dashboard`, {
+                const monthValue = document.getElementById('dashboardMonthFilter')?.value || '';
+                const selectedYear = document.getElementById('dashboardYearFilter')?.value || '';
+                const effectiveYear = selectedYear || (monthValue ? String(new Date().getFullYear()) : '');
+                const params = new URLSearchParams();
+                if (effectiveYear) params.set('year', effectiveYear);
+                if (monthValue) params.set('month', monthValue);
+
+                const response = await fetch(`${API_BASE}/api/provider/dashboard${params.toString() ? `?${params.toString()}` : ''}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -2344,6 +2402,7 @@
                     document.getElementById('stockCount').textContent = data.total_categories ?? 0;
                     document.getElementById('revenue').textContent = '$' + (data.total_revenue || 0).toFixed(2);
                     document.getElementById('orderCount').textContent = data.total_orders;
+                    updateDashboardPeriodLabel(monthValue, effectiveYear);
                 }
             } catch (error) {
                 console.error('Error loading dashboard:', error);
@@ -2914,8 +2973,8 @@
 
         async function initializeProviderPanel() {
             applyTranslations();
-            ['salesMonthFilter', 'restockMonthFilter'].forEach(populateMonthOptions);
-            ['salesYearFilter', 'restockYearFilter'].forEach(populateYearOptions);
+            ['dashboardMonthFilter', 'salesMonthFilter', 'restockMonthFilter'].forEach(populateMonthOptions);
+            ['dashboardYearFilter', 'salesYearFilter', 'restockYearFilter'].forEach(populateYearOptions);
             bindImagePreview('addImageUrl', 'addImagePreview', 'addImagePlaceholder');
             bindImagePreview('editImageUrl', 'editImagePreview', 'editImagePlaceholder');
             document.getElementById('addImageFile').addEventListener('change', () => syncImageInput('addImageFile', 'addImageUrl', 'addImagePreview', 'addImagePlaceholder'));
@@ -2953,8 +3012,8 @@
         window.EcomI18n.init(() => {
             applyTranslations();
             populateCategoryFilters();
-            ['salesMonthFilter', 'restockMonthFilter'].forEach(populateMonthOptions);
-            ['salesYearFilter', 'restockYearFilter'].forEach(populateYearOptions);
+            ['dashboardMonthFilter', 'salesMonthFilter', 'restockMonthFilter'].forEach(populateMonthOptions);
+            ['dashboardYearFilter', 'salesYearFilter', 'restockYearFilter'].forEach(populateYearOptions);
         });
 
         window.addEventListener('load', () => {

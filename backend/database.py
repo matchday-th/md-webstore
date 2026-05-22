@@ -320,8 +320,8 @@ class InventoryDB:
 
 class DashboardDB:
     @staticmethod
-    async def get_provider_dashboard(provider_id: str):
-        """Get dashboard summary for provider"""
+    async def get_provider_dashboard(provider_id: str, month: Optional[int] = None, year: Optional[int] = None):
+        """Get dashboard summary for provider with optional month/year order filtering."""
         provider_scopes = await get_provider_scopes(provider_id)
         
         # Total products and stock
@@ -356,13 +356,27 @@ class DashboardDB:
         product_ids = set(product_lookup.keys())
 
         # Total revenue and orders
-        orders = await db.db["orders"].find({
+        order_query = {
             "$or": [
                 {"provider_id": {"$in": provider_scopes}},
                 {"provider_ids": {"$in": provider_scopes}},
             ],
             "status": {"$ne": "cancelled"}
-        }).to_list(None)
+        }
+        if year:
+            try:
+                year_value = int(year)
+                if month:
+                    month_value = max(1, min(12, int(month)))
+                    start = datetime(year_value, month_value, 1)
+                    end = datetime(year_value + 1, 1, 1) if month_value == 12 else datetime(year_value, month_value + 1, 1)
+                else:
+                    start = datetime(year_value, 1, 1)
+                    end = datetime(year_value + 1, 1, 1)
+                order_query["created_at"] = {"$gte": start, "$lt": end}
+            except (TypeError, ValueError):
+                pass
+        orders = await db.db["orders"].find(order_query).to_list(None)
 
         total_orders = len(orders)
         total_revenue = 0

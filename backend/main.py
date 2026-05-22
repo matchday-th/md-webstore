@@ -1949,10 +1949,18 @@ async def provider_restock_product(
     return {"message": f"Added {restock.quantity} units", "result": result}
 
 @app.get("/api/provider/dashboard")
-async def provider_dashboard(current_user: str = Depends(get_current_user)):
+async def provider_dashboard(
+    month: Optional[int] = None,
+    year: Optional[int] = None,
+    current_user: str = Depends(get_current_user)
+):
     """Provider: Get own dashboard"""
     context = await get_provider_access_context(current_user, "dashboard")
-    dashboard = await DashboardDB.get_provider_dashboard(context["owner_provider_id"])
+    dashboard = await DashboardDB.get_provider_dashboard(
+        context["owner_provider_id"],
+        month=month,
+        year=year,
+    )
     return dashboard
 
 
