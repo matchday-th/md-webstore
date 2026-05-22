@@ -274,11 +274,11 @@
                     
                     showMessage(t("loginSuccess"), "success");
                     
-                    // Redirect based on email
+                    // Redirect based on role
                     setTimeout(() => {
-                        if (email.includes("admin")) {
+                        if (data.role === "admin") {
                             window.location.href = "/studio/";
-                        } else if (email.includes("provider")) {
+                        } else if (data.role === "provider") {
                             window.location.href = "/provider-panel.html";
                         } else {
                             window.location.href = "/user-store.html";

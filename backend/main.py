@@ -22,7 +22,7 @@ from .security import (
 from .models import (
     UserCreate, User, ProductCreate, Product, ProductUpdate, OrderCreate, Order, LoginRequest,
     UserRole, OrderStatus, PaymentStatus, RestockRequest, PaymentRequest, SlipUploadRequest, SlipDecisionRequest,
-    ProviderShopCreate, ProviderSettingsPayload
+    ProviderShopCreate, ProviderSettingsPayload, ProviderStaffCreatePayload, ProviderStaffUpdatePayload
 )
 from .data_loader import load_excel_data, seed_database
 from typing import Optional, List
@@ -164,7 +164,27 @@ class UserProfileUpdatePayload(BaseModel):
     gender: Optional[str] = None
     age: Optional[int] = Field(default=None, ge=0, le=120)
 
+def normalize_provider_staff_level(level: Optional[int]) -> int:
+    try:
+        normalized = int(level or 1)
+    except (TypeError, ValueError):
+        normalized = 1
+    return max(1, min(4, normalized))
+
+
+def build_provider_staff_permissions(level: Optional[int]) -> dict:
+    normalized = normalize_provider_staff_level(level)
+    return {
+        "dashboard": True,
+        "inventory": normalized >= 1,
+        "sales_history": normalized >= 2,
+        "restock_history": normalized >= 3,
+        "settings": normalized >= 4,
+    }
+
+
 def serialize_profile(user: dict) -> dict:
+    permission_level = normalize_provider_staff_level(user.get("provider_staff_level")) if user.get("provider_staff_owner_id") else 4
     return {
         "id": str(user["_id"]),
         "name": user.get("username") or user.get("name") or user.get("email", "").split("@")[0],
@@ -174,7 +194,27 @@ def serialize_profile(user: dict) -> dict:
         "address": user.get("address", ""),
         "gender": user.get("gender", ""),
         "age": user.get("age"),
+        "is_provider_staff": bool(user.get("provider_staff_owner_id")),
+        "provider_staff_owner_id": user.get("provider_staff_owner_id"),
+        "provider_staff_level": permission_level,
+        "provider_staff_permissions": user.get("provider_staff_permissions") or build_provider_staff_permissions(permission_level),
+        "provider_account_type": user.get("provider_account_type") or "provider",
     }
+
+
+def serialize_provider_staff(user: dict) -> dict:
+    level = normalize_provider_staff_level(user.get("provider_staff_level"))
+    permissions = user.get("provider_staff_permissions") or build_provider_staff_permissions(level)
+    return {
+        "id": str(user["_id"]),
+        "name": user.get("username") or user.get("email", "").split("@")[0],
+        "email": user.get("email", ""),
+        "phone": user.get("phone", ""),
+        "permission_level": level,
+        "permissions": permissions,
+        "is_active": bool(user.get("is_active", True)),
+    }
+
 
 def serialize_provider_settings(user: dict) -> dict:
     settings = user.get("provider_settings") or {}
@@ -192,6 +232,44 @@ def serialize_provider_settings(user: dict) -> dict:
         "custom_tax_address": settings.get("custom_tax_address", "") or "",
         "note": settings.get("note", "") or "",
     }
+
+async def get_provider_access_context(current_user: str, required_permission: Optional[str] = None) -> dict:
+    user = await UserDB.get_user_by_id(current_user)
+    if not user or user.get("role") != "provider":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Provider access required"
+        )
+
+    owner_provider_id = str(user.get("provider_staff_owner_id") or current_user)
+    permissions = user.get("provider_staff_permissions") or build_provider_staff_permissions(
+        user.get("provider_staff_level") if user.get("provider_staff_owner_id") else 4
+    )
+
+    if required_permission and not permissions.get(required_permission, False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied for this page"
+        )
+
+    owner_user = await UserDB.get_user_by_id(owner_provider_id)
+    if not owner_user or owner_user.get("role") != "provider":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Provider owner not found"
+        )
+
+    return {
+        "user": user,
+        "owner_user": owner_user,
+        "owner_provider_id": owner_provider_id,
+        "permissions": permissions,
+        "is_staff": bool(user.get("provider_staff_owner_id")),
+        "permission_level": normalize_provider_staff_level(
+            user.get("provider_staff_level") if user.get("provider_staff_owner_id") else 4
+        ),
+    }
+
 
 def serialize_product(product: dict) -> dict:
     return {
@@ -791,7 +869,8 @@ async def register(user: UserCreate):
         "username": user.username,
         "password_hash": hashed_pw.decode(),
         "role": user.role,
-        "is_active": True
+        "is_active": True,
+        "provider_account_type": "provider" if str(user.role) == "provider" else "user"
     }
     
     user_id = await UserDB.create_user(user_data)
@@ -799,10 +878,13 @@ async def register(user: UserCreate):
     # Create access token
     access_token = create_access_token({"sub": user_id})
     
+    created_user = await UserDB.get_user_by_id(user_id)
     return {
         "user_id": user_id,
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "role": created_user.get("role", user.role),
+        "profile": serialize_profile(created_user),
     }
 
 @app.post("/api/auth/login")
@@ -847,7 +929,9 @@ async def login(credentials: LoginRequest):
     return {
         "user_id": str(user["_id"]),
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "role": user.get("role", "user"),
+        "profile": serialize_profile(user),
     }
 
 # ===================== ADMIN DASHBOARD ROUTES =====================
@@ -1487,13 +1571,8 @@ async def admin_checkout(
 
 @app.get("/api/provider/settings")
 async def provider_get_settings(current_user: str = Depends(get_current_user)):
-    user = await UserDB.get_user_by_id(current_user)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Provider not found"
-        )
-    return {"settings": serialize_provider_settings(user)}
+    context = await get_provider_access_context(current_user, "settings")
+    return {"settings": serialize_provider_settings(context["owner_user"])}
 
 @app.put("/api/provider/settings")
 async def provider_update_settings(
@@ -1523,8 +1602,10 @@ async def provider_update_settings(
         "note": (payload.note or "").strip(),
     }
 
+    context = await get_provider_access_context(current_user, "settings")
+
     result = await db.db["users"].update_one(
-        {"_id": parse_object_id(current_user, "user_id")},
+        {"_id": parse_object_id(context["owner_provider_id"], "user_id")},
         {"$set": {
             "provider_settings": settings_payload,
             "updated_at": datetime.utcnow(),
@@ -1536,13 +1617,103 @@ async def provider_update_settings(
             detail="Provider not found"
         )
 
-    user = await UserDB.get_user_by_id(current_user)
-    return {"settings": serialize_provider_settings(user)}
+    owner_user = await UserDB.get_user_by_id(context["owner_provider_id"])
+    return {"settings": serialize_provider_settings(owner_user)}
+
+@app.get("/api/provider/staff")
+async def provider_get_staff(current_user: str = Depends(get_current_user)):
+    context = await get_provider_access_context(current_user, "settings")
+    staff_accounts = await db.db["users"].find({
+        "role": "provider",
+        "provider_account_type": "staff",
+        "provider_staff_owner_id": context["owner_provider_id"],
+    }).sort("created_at", 1).to_list(None)
+    return {"staff": [serialize_provider_staff(user) for user in staff_accounts]}
+
+@app.post("/api/provider/staff")
+async def provider_create_staff(
+    payload: ProviderStaffCreatePayload,
+    current_user: str = Depends(get_current_user)
+):
+    context = await get_provider_access_context(current_user, "settings")
+    email = (payload.email or "").strip().lower()
+    username = (payload.username or "").strip()
+    password = payload.password or ""
+    if not email or not username or not password.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name, email, and password are required")
+
+    existing_user = await UserDB.get_user_by_email(email)
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+
+    level = normalize_provider_staff_level(payload.permission_level)
+    now = datetime.utcnow()
+    staff_data = {
+        "email": email,
+        "username": username,
+        "phone": (payload.phone or "").strip(),
+        "password_hash": bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode(),
+        "role": "provider",
+        "provider_account_type": "staff",
+        "provider_staff_owner_id": context["owner_provider_id"],
+        "provider_staff_level": level,
+        "provider_staff_permissions": build_provider_staff_permissions(level),
+        "managed_by_provider_panel": True,
+        "is_active": True,
+        "created_at": now,
+        "updated_at": now,
+    }
+    result = await db.db["users"].insert_one(staff_data)
+    created_user = await db.db["users"].find_one({"_id": result.inserted_id})
+    return {"staff": serialize_provider_staff(created_user)}
+
+@app.put("/api/provider/staff/{staff_id}")
+async def provider_update_staff(
+    staff_id: str,
+    payload: ProviderStaffUpdatePayload,
+    current_user: str = Depends(get_current_user)
+):
+    context = await get_provider_access_context(current_user, "settings")
+    staff_object_id = parse_object_id(staff_id, "staff_id")
+    existing_staff = await db.db["users"].find_one({
+        "_id": staff_object_id,
+        "role": "provider",
+        "provider_account_type": "staff",
+        "provider_staff_owner_id": context["owner_provider_id"],
+    })
+    if not existing_staff:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Staff account not found")
+
+    updates = {"updated_at": datetime.utcnow()}
+    if payload.username is not None:
+        updates["username"] = payload.username.strip()
+    if payload.phone is not None:
+        updates["phone"] = payload.phone.strip()
+    if payload.is_active is not None:
+        updates["is_active"] = bool(payload.is_active)
+    if payload.email is not None:
+        next_email = payload.email.strip().lower()
+        if next_email and next_email != existing_staff.get("email"):
+            duplicate = await UserDB.get_user_by_email(next_email)
+            if duplicate and str(duplicate.get("_id")) != staff_id:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+            updates["email"] = next_email
+    if payload.password:
+        updates["password_hash"] = bcrypt.hashpw(payload.password.encode(), bcrypt.gensalt()).decode()
+    if payload.permission_level is not None:
+        level = normalize_provider_staff_level(payload.permission_level)
+        updates["provider_staff_level"] = level
+        updates["provider_staff_permissions"] = build_provider_staff_permissions(level)
+
+    await db.db["users"].update_one({"_id": staff_object_id}, {"$set": updates})
+    updated_staff = await db.db["users"].find_one({"_id": staff_object_id})
+    return {"staff": serialize_provider_staff(updated_staff)}
 
 @app.get("/api/provider/shops")
 async def provider_get_shops(current_user: str = Depends(get_current_user)):
     """Provider: list accessible shops for product assignment."""
-    shops = await list_provider_shops(current_user)
+    context = await get_provider_access_context(current_user, "inventory")
+    shops = await list_provider_shops(context["owner_provider_id"])
     return {"shops": shops}
 
 
@@ -1555,6 +1726,8 @@ async def provider_create_shop(
     await db_rate_limiter.check_circuit_breaker()
     if not await db_rate_limiter.check_user_rate(current_user):
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limit exceeded")
+
+    context = await get_provider_access_context(current_user, "settings")
 
     shop_name = payload.name.strip()
     if not shop_name:
@@ -1576,8 +1749,9 @@ async def provider_create_shop(
         "username": shop_name,
         "password_hash": bcrypt.hashpw(temp_password.encode(), bcrypt.gensalt()).decode(),
         "role": "provider",
-        "owner_provider_id": current_user,
+        "owner_provider_id": context["owner_provider_id"],
         "managed_by_provider_panel": True,
+        "provider_account_type": "shop",
         "is_active": True,
         "created_at": now,
         "updated_at": now,
@@ -1611,9 +1785,10 @@ async def provider_create_product(
             detail="SKU already exists"
         )
     
+    context = await get_provider_access_context(current_user, "inventory")
     product_data = product.dict()
     provider_scopes = await get_provider_scopes(current_user)
-    target_provider_id = product.provider_id or current_user
+    target_provider_id = product.provider_id or context["owner_provider_id"]
     if target_provider_id not in provider_scopes:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -1635,6 +1810,7 @@ async def provider_get_products(
     current_user: str = Depends(get_current_user)
 ):
     """Provider: Get own products"""
+    await get_provider_access_context(current_user, "inventory")
     products = await ProductDB.get_products_by_provider(current_user)
     products = await enrich_products_with_provider_names(products)
     normalized_provider_id = (provider_id or "").strip()
@@ -1655,6 +1831,7 @@ async def provider_get_products(
 @app.get("/api/provider/product-categories")
 async def provider_get_product_categories(current_user: str = Depends(get_current_user)):
     """Provider: Get category list from own products"""
+    await get_provider_access_context(current_user, "inventory")
     products = await ProductDB.get_products_by_provider(current_user)
     categories = sorted({
         (product.get("category") or "").strip()
@@ -1678,6 +1855,7 @@ async def provider_update_product(
             detail="Rate limit exceeded"
         )
 
+    await get_provider_access_context(current_user, "inventory")
     provider_scopes = await get_provider_scopes(current_user)
     existing_product = await ProductDB.get_product_by_id(product_id)
     if not existing_product or existing_product.get("provider_id") not in provider_scopes:
@@ -1717,6 +1895,7 @@ async def provider_delete_product(
             detail="Rate limit exceeded"
         )
 
+    await get_provider_access_context(current_user, "inventory")
     provider_scopes = await get_provider_scopes(current_user)
     existing_product = await ProductDB.get_product_by_id(product_id)
     if not existing_product or existing_product.get("provider_id") not in provider_scopes:
@@ -1748,7 +1927,9 @@ async def provider_restock_product(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Rate limit exceeded"
         )
-    
+
+    await get_provider_access_context(current_user, "inventory")
+
     result = await ProductDB.update_product_stock(
         product_id=product_id,
         quantity_change=restock.quantity,
@@ -1770,7 +1951,8 @@ async def provider_restock_product(
 @app.get("/api/provider/dashboard")
 async def provider_dashboard(current_user: str = Depends(get_current_user)):
     """Provider: Get own dashboard"""
-    dashboard = await DashboardDB.get_provider_dashboard(current_user)
+    context = await get_provider_access_context(current_user, "dashboard")
+    dashboard = await DashboardDB.get_provider_dashboard(context["owner_provider_id"])
     return dashboard
 
 
@@ -1783,6 +1965,7 @@ async def provider_sales_history(
     current_user: str = Depends(get_current_user)
 ):
     """Provider: Get bill-style sales history filtered by day/month/year/category."""
+    await get_provider_access_context(current_user, "sales_history")
     provider_scopes = await get_provider_scopes(current_user)
     products = await db.db["products"].find(
         {"provider_id": {"$in": provider_scopes}}
@@ -1910,6 +2093,7 @@ async def provider_restock_history(
     current_user: str = Depends(get_current_user)
 ):
     """Provider: Get restock history filtered by day/month/year/category."""
+    await get_provider_access_context(current_user, "restock_history")
     provider_scopes = await get_provider_scopes(current_user)
     products = await db.db["products"].find(
         {"provider_id": {"$in": provider_scopes}}
@@ -1955,6 +2139,7 @@ async def provider_restock_history(
 @app.get("/api/provider/slip-reviews")
 async def provider_slip_reviews(current_user: str = Depends(get_current_user)):
     """Provider: Review pending payment slips for assigned orders."""
+    await get_provider_access_context(current_user, "settings")
     provider_scopes = await get_provider_scopes(current_user)
     orders = await db.db["orders"].find({
         "$or": [
@@ -1973,6 +2158,7 @@ async def provider_slip_reviews(current_user: str = Depends(get_current_user)):
 @app.get("/api/provider/orders")
 async def provider_orders(current_user: str = Depends(get_current_user)):
     """Provider: list all orders that include this provider's products."""
+    await get_provider_access_context(current_user, "settings")
     provider_scopes = await get_provider_scopes(current_user)
     provider_scope_ids = set(provider_scopes)
     orders = await db.db["orders"].find({
@@ -1996,6 +2182,7 @@ async def provider_approve_slip(
     payload: SlipDecisionRequest,
     current_user: str = Depends(get_current_user)
 ):
+    await get_provider_access_context(current_user, "settings")
     provider_scopes = await get_provider_scopes(current_user)
     order = await OrderDB.get_order_by_id(order_id)
     if not order:
@@ -2030,6 +2217,7 @@ async def provider_reject_slip(
     payload: SlipDecisionRequest,
     current_user: str = Depends(get_current_user)
 ):
+    await get_provider_access_context(current_user, "settings")
     provider_scopes = await get_provider_scopes(current_user)
     order = await OrderDB.get_order_by_id(order_id)
     if not order:
@@ -2374,8 +2562,10 @@ async def user_update_profile(
             detail="Invalid gender"
         )
 
+    context = await get_provider_access_context(current_user, "settings")
+
     result = await db.db["users"].update_one(
-        {"_id": parse_object_id(current_user, "user_id")},
+        {"_id": parse_object_id(context["owner_provider_id"], "user_id")},
         {"$set": {
             "gender": normalized_gender,
             "age": int(payload.age) if payload.age is not None else None,

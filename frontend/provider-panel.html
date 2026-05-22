@@ -508,6 +508,48 @@
                         <button type="submit" id="saveProviderSettingsButton" class="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800">บันทึกการตั้งค่า</button>
                     </div>
                 </form>
+
+                <div id="providerStaffSection" class="mt-10 border-t border-black/10 pt-8">
+                    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Staff Accounts</p>
+                            <h3 class="mt-2 text-2xl font-semibold tracking-tight text-black">👥 ตั้งค่าพนักงาน</h3>
+                            <p class="mt-2 max-w-2xl text-sm text-neutral-500">สร้างบัญชีพนักงานและกำหนดระดับสิทธิ์ใช้งานตามหน้าในระบบผู้ให้บริการ</p>
+                        </div>
+                        <button type="button" class="rounded-full bg-red-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600" onclick="openStaffModal()">+ เพิ่มพนักงาน</button>
+                    </div>
+                    <div class="overflow-hidden rounded-[28px] border border-black/10 bg-white">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-black/10 text-sm">
+                                <thead class="bg-red-50 text-left text-xs font-semibold uppercase tracking-[0.18em] text-red-500">
+                                    <tr>
+                                        <th class="px-5 py-4">ชื่อ-สกุล</th>
+                                        <th class="px-5 py-4">อีเมล</th>
+                                        <th class="px-5 py-4">เบอร์โทร</th>
+                                        <th class="px-5 py-4">ระดับ</th>
+                                        <th class="px-5 py-4">สิทธิ์ใช้งาน</th>
+                                        <th class="px-5 py-4">สถานะ</th>
+                                        <th class="px-5 py-4">แก้ไข</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="providerStaffTableBody" class="divide-y divide-black/5 bg-white">
+                                    <tr>
+                                        <td colspan="7" class="px-5 py-8 text-center text-neutral-500">กำลังโหลดรายชื่อพนักงาน...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mt-5 rounded-[24px] border border-black/10 bg-neutral-50 px-5 py-4 text-sm text-neutral-600">
+                        <div class="font-semibold text-black">ระดับสิทธิ์การใช้งาน</div>
+                        <div class="mt-3 space-y-1">
+                            <div>ระดับ 1: ใช้ได้เฉพาะหน้าคลังสินค้า</div>
+                            <div>ระดับ 2: หน้าคลังสินค้า + ประวัติขาย</div>
+                            <div>ระดับ 3: ระดับ 2 + ประวัติเติมสินค้า</div>
+                            <div>ระดับ 4: ใช้ได้ทุกหน้า</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -721,6 +763,61 @@
         </div>
     </div>
 
+
+    <div id="staffModal" class="modal" onclick="handleStaffModalBackdrop(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Staff Account</p>
+                    <h2 id="staffModalTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">👥 เพิ่มพนักงาน</h2>
+                </div>
+                <button type="button" class="close-button" onclick="closeStaffModal()">&times;</button>
+            </div>
+            <form id="staffForm" onsubmit="saveProviderStaff(event)">
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <div class="form-group sm:col-span-2">
+                        <label>ชื่อ-สกุล *</label>
+                        <input type="text" id="staffName" required placeholder="ชื่อ-สกุลพนักงาน">
+                    </div>
+                    <div class="form-group">
+                        <label>อีเมล *</label>
+                        <input type="email" id="staffEmail" required placeholder="staff@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>เบอร์โทร</label>
+                        <input type="text" id="staffPhone" placeholder="08x-xxx-xxxx">
+                    </div>
+                    <div class="form-group">
+                        <label>รหัสผ่าน <span id="staffPasswordHint" class="text-xs font-normal text-neutral-500">*</span></label>
+                        <input type="password" id="staffPassword" placeholder="กรอกรหัสผ่าน">
+                    </div>
+                    <div class="form-group">
+                        <label>กำหนดสิทธิใช้งานได้ *</label>
+                        <select id="staffPermissionLevel" required>
+                            <option value="1">ระดับ 1 - คลังสินค้า</option>
+                            <option value="2">ระดับ 2 - คลังสินค้า + ประวัติขาย</option>
+                            <option value="3">ระดับ 3 - ระดับ 2 + ประวัติเติมสินค้า</option>
+                            <option value="4">ระดับ 4 - ใช้ได้ทุกหน้า</option>
+                        </select>
+                    </div>
+                    <div class="form-group sm:col-span-2">
+                        <label class="inline-flex items-center gap-3">
+                            <input type="checkbox" id="staffIsActive" checked>
+                            <span class="mb-0">เปิดใช้งานบัญชี</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-actions mt-3 border-t border-black/10 pt-6">
+                    <div class="text-sm text-neutral-500">กำหนด level ตามหน้าที่ใช้งานของพนักงานในระบบ</div>
+                    <div class="flex flex-1 justify-end gap-3">
+                        <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="closeStaffModal()">ยกเลิก</button>
+                        <button type="submit" id="staffSaveButton" class="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800">บันทึกพนักงาน</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="/frontend-assets/i18n.js"></script>
     <script>
         const protocol = window.location.protocol;
@@ -737,6 +834,8 @@
         let currentSalesBill = null;
         let providerSettings = null;
         let currentProviderProfile = null;
+        let providerStaffAccounts = [];
+        let currentEditingStaffId = null;
 
         const translations = {
             en: {
@@ -986,6 +1085,69 @@
                 text = text.replace(`{${name}}`, value);
             });
             return text;
+        }
+
+        function getProviderPermissions(profile = currentProviderProfile) {
+            return profile?.provider_staff_permissions || {
+                dashboard: true,
+                inventory: true,
+                sales_history: true,
+                restock_history: true,
+                settings: true,
+            };
+        }
+
+        function hasProviderPermission(permissionKey) {
+            return Boolean(getProviderPermissions()[permissionKey]);
+        }
+
+        function getTabPermissionKey(tabName) {
+            const map = {
+                'dashboard': 'dashboard',
+                'inventory-hub': 'inventory',
+                'sales-history': 'sales_history',
+                'restock-history': 'restock_history',
+                'provider-settings': 'settings',
+            };
+            return map[tabName] || 'dashboard';
+        }
+
+        function describeStaffLevel(level) {
+            const numericLevel = Number(level || 1);
+            const descriptions = {
+                1: 'คลังสินค้า',
+                2: 'คลังสินค้า + ประวัติขาย',
+                3: 'ระดับ 2 + ประวัติเติมสินค้า',
+                4: 'ใช้ได้ทุกหน้า',
+            };
+            return descriptions[numericLevel] || descriptions[1];
+        }
+
+        function applyProviderAccessControl() {
+            const permissions = getProviderPermissions();
+            const tabVisibility = [
+                ['tabDashboard', permissions.dashboard],
+                ['tabInventoryHub', permissions.inventory],
+                ['tabSalesHistory', permissions.sales_history],
+                ['tabRestockHistory', permissions.restock_history],
+                ['tabProviderSettings', permissions.settings],
+            ];
+            tabVisibility.forEach(([id, isVisible]) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.classList.toggle('hidden', !isVisible);
+                }
+            });
+
+            const staffSection = document.getElementById('providerStaffSection');
+            if (staffSection) {
+                staffSection.classList.toggle('hidden', !permissions.settings);
+            }
+
+            const currentActive = document.querySelector('.tab-content.active')?.id;
+            if (currentActive && !permissions[getTabPermissionKey(currentActive)]) {
+                switchTab('dashboard');
+            }
         }
 
         function applyTranslations() {
@@ -1346,6 +1508,12 @@
         }
 
         function switchTab(tabName, event) {
+            const permissionKey = getTabPermissionKey(tabName);
+            if (!hasProviderPermission(permissionKey)) {
+                showMessage(window.EcomI18n.getLanguage() === 'th' ? '❌ คุณไม่มีสิทธิ์เข้าใช้งานหน้านี้' : '❌ You do not have access to this page', 'error');
+                return;
+            }
+
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -1354,8 +1522,9 @@
             });
 
             document.getElementById(tabName).classList.add('active');
-            if (event?.currentTarget) {
-                event.currentTarget.classList.add('active');
+            const targetButton = event?.currentTarget || document.querySelector(`[onclick="switchTab('${tabName}', event)"]`);
+            if (targetButton) {
+                targetButton.classList.add('active');
             }
 
             if (tabName === 'dashboard') {
@@ -1369,6 +1538,7 @@
                 loadRestockHistory();
             } else if (tabName === 'provider-settings') {
                 loadProviderSettings();
+                loadProviderStaff();
             }
         }
 
@@ -1476,6 +1646,7 @@
                 }
                 const data = await response.json();
                 currentProviderProfile = data.profile || null;
+                applyProviderAccessControl();
             } catch (error) {
                 console.error('Failed to load current provider profile', error);
             }
@@ -1809,6 +1980,133 @@
         function exportFullTaxInvoice() {
             if (!currentSalesBill) return;
             openPrintDocument('ใบกำกับภาษีเต็มรูป', buildFullTaxInvoiceHtml(currentSalesBill));
+        }
+
+        function renderProviderStaffTable() {
+            const tbody = document.getElementById('providerStaffTableBody');
+            if (!tbody) return;
+            if (!providerStaffAccounts.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-neutral-500">ยังไม่มีพนักงานในระบบ</td></tr>';
+                return;
+            }
+            tbody.innerHTML = providerStaffAccounts.map((staff) => `
+                <tr class="transition hover:bg-neutral-50">
+                    <td class="px-5 py-4 font-medium text-black">${staff.name || '-'}</td>
+                    <td class="px-5 py-4 text-neutral-600">${staff.email || '-'}</td>
+                    <td class="px-5 py-4 text-neutral-600">${staff.phone || '-'}</td>
+                    <td class="px-5 py-4"><span class="inline-flex rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">ระดับ ${staff.permission_level}</span></td>
+                    <td class="px-5 py-4 text-neutral-600">${describeStaffLevel(staff.permission_level)}</td>
+                    <td class="px-5 py-4">${staff.is_active ? '<span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">เปิดใช้งาน</span>' : '<span class="inline-flex rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-500">ปิดใช้งาน</span>'}</td>
+                    <td class="px-5 py-4"><button type="button" class="rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold text-black transition hover:border-black" onclick="openStaffModal('${staff.id}')">แก้ไข</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadProviderStaff() {
+            if (!hasProviderPermission('settings')) return;
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/staff`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load staff');
+                }
+                const data = await response.json();
+                providerStaffAccounts = data.staff || [];
+                renderProviderStaffTable();
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        function openStaffModal(staffId = null) {
+            currentEditingStaffId = staffId;
+            const modalTitle = document.getElementById('staffModalTitle');
+            const saveButton = document.getElementById('staffSaveButton');
+            const passwordInput = document.getElementById('staffPassword');
+            const passwordHint = document.getElementById('staffPasswordHint');
+            document.getElementById('staffForm').reset();
+            document.getElementById('staffIsActive').checked = true;
+            document.getElementById('staffPermissionLevel').value = '1';
+
+            if (staffId) {
+                const staff = providerStaffAccounts.find((entry) => entry.id === staffId);
+                if (!staff) return;
+                document.getElementById('staffName').value = staff.name || '';
+                document.getElementById('staffEmail').value = staff.email || '';
+                document.getElementById('staffPhone').value = staff.phone || '';
+                document.getElementById('staffPermissionLevel').value = String(staff.permission_level || 1);
+                document.getElementById('staffIsActive').checked = Boolean(staff.is_active);
+                passwordInput.value = '';
+                passwordInput.required = false;
+                if (passwordHint) passwordHint.textContent = '(เว้นว่างได้หากไม่เปลี่ยน)';
+                modalTitle.textContent = '👥 แก้ไขพนักงาน';
+                saveButton.textContent = 'บันทึกการแก้ไข';
+            } else {
+                passwordInput.required = true;
+                if (passwordHint) passwordHint.textContent = '*';
+                modalTitle.textContent = '👥 เพิ่มพนักงาน';
+                saveButton.textContent = 'บันทึกพนักงาน';
+            }
+            document.getElementById('staffModal').classList.add('show');
+        }
+
+        function closeStaffModal() {
+            currentEditingStaffId = null;
+            document.getElementById('staffForm').reset();
+            document.getElementById('staffModal').classList.remove('show');
+        }
+
+        function handleStaffModalBackdrop(event) {
+            if (event.target.id === 'staffModal') {
+                closeStaffModal();
+            }
+        }
+
+        async function saveProviderStaff(event) {
+            event.preventDefault();
+            const payload = {
+                username: document.getElementById('staffName').value.trim(),
+                email: document.getElementById('staffEmail').value.trim(),
+                phone: document.getElementById('staffPhone').value.trim(),
+                password: document.getElementById('staffPassword').value,
+                permission_level: parseInt(document.getElementById('staffPermissionLevel').value, 10),
+                is_active: document.getElementById('staffIsActive').checked,
+            };
+
+            if (!payload.username || !payload.email || (!currentEditingStaffId && !payload.password)) {
+                showMessage(window.EcomI18n.getLanguage() === 'th' ? '❌ กรุณากรอกข้อมูลพนักงานให้ครบ' : '❌ Please complete the staff form', 'error');
+                return;
+            }
+
+            const requestOptions = {
+                method: currentEditingStaffId ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            };
+
+            const endpoint = currentEditingStaffId
+                ? `${API_BASE}/api/provider/staff/${currentEditingStaffId}`
+                : `${API_BASE}/api/provider/staff`;
+
+            try {
+                const response = await fetch(endpoint, requestOptions);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to save staff account');
+                }
+                showMessage(currentEditingStaffId ? '✅ อัปเดตพนักงานสำเร็จ!' : '✅ สร้างพนักงานสำเร็จ!', 'success');
+                closeStaffModal();
+                await loadProviderStaff();
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
         }
 
         async function handleAddProduct(e) {
@@ -2624,13 +2922,12 @@
             document.getElementById('editImageFile').addEventListener('change', () => syncImageInput('editImageFile', 'editImageUrl', 'editImagePreview', 'editImagePlaceholder'));
 
             const loadSteps = [
+                ['profile', loadCurrentProviderProfile],
                 ['products', loadMyProducts],
                 ['shops', loadProviderShops],
                 ['categories', loadProductCategories],
                 ['dashboard', loadDashboard],
                 ['restock', loadProductsForRestock],
-                ['settings', loadProviderSettings],
-                ['profile', loadCurrentProviderProfile],
             ];
 
             for (const [label, loader] of loadSteps) {
@@ -2640,6 +2937,16 @@
                     console.error(`Provider panel step failed: ${label}`, error);
                 }
             }
+
+            if (hasProviderPermission('settings')) {
+                try {
+                    await loadProviderSettings();
+                    await loadProviderStaff();
+                } catch (error) {
+                    console.error('Provider panel settings load failed', error);
+                }
+            }
+            applyProviderAccessControl();
         }
 
         window.EcomI18n.bindSelect(document.getElementById("languageSwitcher"));

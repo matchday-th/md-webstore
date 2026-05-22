@@ -63,24 +63,30 @@ class UserDB:
         return await db.db["users"].find_one({"_id": ObjectId(user_id)})
 
 async def get_provider_scopes(provider_id: str):
-    """Resolve legacy provider ids that should be visible to this provider account."""
-    scopes = [provider_id]
+    """Resolve provider scopes for owner accounts, child shops, and provider staff."""
     user = await UserDB.get_user_by_id(provider_id)
+    root_provider_id = str(user.get("provider_staff_owner_id") or provider_id) if user else provider_id
+    scopes = [root_provider_id]
+    root_user = await UserDB.get_user_by_id(root_provider_id)
 
-    if user and user.get("role") == "provider":
+    if root_user and root_user.get("role") == "provider":
         legacy_provider_emails = {
             "provider@ecommerce.local",
             "provider@example.com",
         }
-        if user.get("email") in legacy_provider_emails:
+        if root_user.get("email") in legacy_provider_emails:
             scopes.append("provider_001")
 
         child_shops = await db.db["users"].find({
             "role": "provider",
-            "owner_provider_id": provider_id,
+            "owner_provider_id": root_provider_id,
             "is_active": True,
+            "provider_account_type": {"$ne": "staff"},
         }).to_list(None)
         scopes.extend(str(shop.get("_id")) for shop in child_shops if shop.get("_id"))
+
+    if user and not user.get("provider_staff_owner_id"):
+        scopes.insert(0, provider_id)
 
     return list(dict.fromkeys(scopes))
 

@@ -164,6 +164,21 @@ class ProviderSettingsPayload(BaseModel):
     custom_tax_address: Optional[str] = ""
     note: Optional[str] = ""
 
+class ProviderStaffCreatePayload(BaseModel):
+    username: str
+    email: str
+    phone: Optional[str] = ""
+    password: str
+    permission_level: int = Field(ge=1, le=4)
+
+class ProviderStaffUpdatePayload(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = ""
+    password: Optional[str] = None
+    permission_level: Optional[int] = Field(default=None, ge=1, le=4)
+    is_active: Optional[bool] = True
+
 # ===================== TRANSACTION LOG (Duplicate Purchase Prevention) =====================
 class TransactionLog(BaseModel):
     id: str = Field(alias="_id")
