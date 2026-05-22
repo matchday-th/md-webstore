@@ -722,6 +722,7 @@
         let currentEditingProductId = null;
         let currentSalesBill = null;
         let providerSettings = null;
+        let currentProviderProfile = null;
 
         const translations = {
             en: {
@@ -1042,6 +1043,16 @@
                 month: 'short',
                 day: 'numeric'
             });
+        }
+
+        function formatReceiptDateTime(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '-';
+            const locale = window.EcomI18n.getLanguage() === 'th' ? 'th-TH' : 'en-GB';
+            const datePart = date.toLocaleDateString(locale, { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const timePart = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+            return datePart + ' - ' + timePart;
         }
 
         function prettyLabel(value) {
@@ -1428,6 +1439,354 @@
             } catch (error) {
                 showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
             }
+        }
+
+        async function loadCurrentProviderProfile() {
+            try {
+                const response = await fetch(`${API_BASE}/api/user/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load profile');
+                }
+                const data = await response.json();
+                currentProviderProfile = data.profile || null;
+            } catch (error) {
+                console.error('Failed to load current provider profile', error);
+            }
+        }
+
+        function escapeExportHtml(value) {
+            return String(value == null ? '' : value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function formatReceiptAmount(value) {
+            return Number(value || 0).toFixed(2);
+        }
+
+        function getProviderDocumentContext() {
+            const settings = providerSettings || {};
+            const addressMode = settings.address_mode || 'registered';
+            const companyName = settings.company_name || settings.tax_name || currentProviderProfile?.name || '-';
+            const branchNumber = settings.branch_number || '0001';
+
+            let addressLine1 = '';
+            let addressLine2 = '';
+            if (addressMode === 'branch') {
+                addressLine1 = settings.branch_address_line_1 || '';
+                addressLine2 = settings.branch_address_line_2 || '';
+            } else if (addressMode === 'custom') {
+                addressLine1 = settings.custom_tax_address || '';
+                addressLine2 = '';
+            } else {
+                addressLine1 = settings.registered_address_line_1 || '';
+                addressLine2 = settings.registered_address_line_2 || '';
+            }
+
+            return {
+                companyName,
+                taxId: settings.tax_id || '-',
+                branchNumber,
+                addressLine1,
+                addressLine2,
+                note: settings.note || '',
+                vatRegistered: Boolean(settings.vat_registered),
+                employeeName: currentProviderProfile?.name || '-'
+            };
+        }
+
+        function getPaymentBuckets(bill) {
+            const total = Number(bill?.grand_total || bill?.provider_total || 0);
+            const lastChannel = bill?.payment_history?.[bill.payment_history.length - 1]?.channel || '';
+            const method = formatPaymentMethod(lastChannel).toLowerCase();
+            return {
+                cash: 0,
+                transfer: method === 'qrcode' ? total : 0,
+                creditCard: method === 'credit card' ? total : 0,
+                change: 0
+            };
+        }
+
+        function openPrintDocument(title, html) {
+            const printWindow = window.open('', '_blank', 'width=720,height=960');
+            if (!printWindow) {
+                showMessage(window.EcomI18n.getLanguage() === 'th' ? '❌ เบราว์เซอร์บล็อกหน้าต่างพิมพ์' : '❌ Popup blocked by browser', 'error');
+                return;
+            }
+
+            printWindow.document.open();
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="th">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${escapeExportHtml(title)}</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            background: #f5f5f5;
+                            font-family: "Prompt", "Segoe UI", sans-serif;
+                            color: #111111;
+                        }
+                        .print-shell {
+                            min-height: 100vh;
+                            display: flex;
+                            align-items: flex-start;
+                            justify-content: center;
+                            padding: 24px;
+                        }
+                        .receipt-sheet {
+                            width: 100%;
+                            max-width: 390px;
+                            background: #ffffff;
+                            padding: 16px 18px 22px;
+                            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+                        }
+                        .receipt-sheet.full {
+                            max-width: 430px;
+                        }
+                        .receipt-center {
+                            text-align: center;
+                        }
+                        .receipt-heading {
+                            font-size: 18px;
+                            font-weight: 700;
+                            line-height: 1.35;
+                        }
+                        .receipt-subheading {
+                            margin-top: 6px;
+                            font-size: 12px;
+                            line-height: 1.45;
+                        }
+                        .receipt-meta {
+                            margin-top: 14px;
+                            font-size: 12px;
+                            line-height: 1.6;
+                        }
+                        .receipt-line {
+                            border-top: 2px dotted #111111;
+                            margin: 12px 0;
+                        }
+                        .receipt-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            font-size: 12px;
+                        }
+                        .receipt-table th,
+                        .receipt-table td {
+                            padding: 4px 0;
+                            vertical-align: top;
+                        }
+                        .receipt-table th {
+                            text-align: left;
+                            font-weight: 700;
+                        }
+                        .receipt-table th:last-child,
+                        .receipt-table td:last-child,
+                        .receipt-table td.num,
+                        .receipt-table th.num {
+                            text-align: right;
+                        }
+                        .receipt-summary {
+                            margin-top: 10px;
+                            font-size: 12px;
+                        }
+                        .receipt-summary-row {
+                            display: flex;
+                            align-items: flex-start;
+                            justify-content: space-between;
+                            gap: 12px;
+                            margin: 4px 0;
+                        }
+                        .receipt-summary-row.total {
+                            font-size: 18px;
+                            font-weight: 700;
+                        }
+                        .receipt-footer {
+                            margin-top: 16px;
+                            text-align: center;
+                            font-size: 12px;
+                            line-height: 1.55;
+                        }
+                        @media print {
+                            body {
+                                background: #ffffff;
+                            }
+                            .print-shell {
+                                padding: 0;
+                            }
+                            .receipt-sheet {
+                                box-shadow: none;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-shell">${html}</div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+            }, 250);
+        }
+
+        function buildCompactTaxInvoiceHtml(bill) {
+            const context = getProviderDocumentContext();
+            const payment = getPaymentBuckets(bill);
+            const totalQuantity = (bill.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+            const itemsHtml = (bill.items || []).map((item) => `
+                <tr>
+                    <td>
+                        <div>${escapeExportHtml(item.product_name || '-')}</div>
+                        <div>(${escapeExportHtml(item.category || 'สินค้า')})</div>
+                    </td>
+                    <td class="num">${formatReceiptAmount(item.unit_price)}</td>
+                    <td class="num">${Number(item.quantity || 0)}</td>
+                    <td class="num">${formatReceiptAmount(item.total_amount)}</td>
+                </tr>
+            `).join('');
+
+            return `
+                <div class="receipt-sheet">
+                    <div class="receipt-center">
+                        <div class="receipt-heading">${escapeExportHtml(context.companyName)}</div>
+                        <div class="receipt-heading">ใบเสร็จรับเงิน/ใบกำกับภาษีอย่างย่อ</div>
+                        ${context.addressLine1 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine1)}</div>` : ''}
+                        ${context.addressLine2 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine2)}</div>` : ''}
+                        <div class="receipt-subheading">สาขา ${escapeExportHtml(context.branchNumber)}</div>
+                    </div>
+                    <div class="receipt-meta">
+                        <div>Rcpt.: ${escapeExportHtml(bill.receipt_number || bill.invoice_number || '-')}</div>
+                        <div>TAX : ${escapeExportHtml(context.vatRegistered ? context.taxId : '-')}</div>
+                        <div>POS : ${escapeExportHtml(context.branchNumber)}</div>
+                        <div>ลูกค้า: ${escapeExportHtml(bill.customer_name || '-')}</div>
+                        <div>พนักงาน: ${escapeExportHtml(context.employeeName)}</div>
+                    </div>
+                    <div class="receipt-line"></div>
+                    <table class="receipt-table">
+                        <thead>
+                            <tr>
+                                <th>รายการ</th>
+                                <th class="num">ราคา</th>
+                                <th class="num">จำนวน</th>
+                                <th class="num">รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody>${itemsHtml}</tbody>
+                    </table>
+                    <div class="receipt-line"></div>
+                    <div class="receipt-summary">
+                        <div class="receipt-summary-row"><span>ราคาสินค้า: (Qty. ${totalQuantity})</span><span>${formatReceiptAmount(bill.subtotal)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>ส่วนลด</span><span>${formatReceiptAmount(bill.discount_amount)} บาท</span></div>
+                        ${context.vatRegistered ? `<div class="receipt-summary-row"><span>ราคารวม</span><span>${formatReceiptAmount(bill.taxable_amount)} บาท</span></div>` : ''}
+                        ${context.vatRegistered ? `<div class="receipt-summary-row"><span>VAT 7%</span><span>${formatReceiptAmount(bill.tax_amount)} บาท</span></div>` : ''}
+                        <div class="receipt-summary-row total"><span>ยอดสุทธิ</span><span>${formatReceiptAmount(bill.grand_total || bill.provider_total)} บาท</span></div>
+                    </div>
+                    <div class="receipt-line"></div>
+                    <div class="receipt-summary">
+                        <div class="receipt-summary-row"><span>เงินสด</span><span>${formatReceiptAmount(payment.cash)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>เงินโอน</span><span>${formatReceiptAmount(payment.transfer)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>บัตรเครดิต</span><span>${formatReceiptAmount(payment.creditCard)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>เงินทอน</span><span>${formatReceiptAmount(payment.change)} บาท</span></div>
+                    </div>
+                    <div class="receipt-footer">
+                        <div><strong>** วันที่: ${escapeExportHtml(formatReceiptDateTime(bill.created_at))} **</strong></div>
+                        ${context.note ? `<div>${escapeExportHtml(context.note)}</div>` : '<div>ขอบคุณที่ใช้บริการ</div>'}
+                        <div>Powered by matchday</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildFullTaxInvoiceHtml(bill) {
+            const context = getProviderDocumentContext();
+            const payment = getPaymentBuckets(bill);
+            const totalQuantity = (bill.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+            const itemsHtml = (bill.items || []).map((item) => `
+                <tr>
+                    <td>
+                        <div>${escapeExportHtml(item.product_name || '-')}</div>
+                        <div>(${escapeExportHtml(item.category || 'สินค้า')})</div>
+                    </td>
+                    <td class="num">${formatReceiptAmount(item.unit_price)}</td>
+                    <td class="num">${Number(item.quantity || 0)}</td>
+                    <td class="num">${formatReceiptAmount(item.total_amount)}</td>
+                </tr>
+            `).join('');
+
+            return `
+                <div class="receipt-sheet full">
+                    <div class="receipt-center">
+                        <div class="receipt-heading">${escapeExportHtml(context.companyName)}</div>
+                        <div class="receipt-heading">ใบเสร็จรับเงิน/ใบกำกับภาษีเต็มรูป</div>
+                        ${context.addressLine1 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine1)}</div>` : ''}
+                        ${context.addressLine2 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine2)}</div>` : ''}
+                        <div class="receipt-subheading">สาขา ${escapeExportHtml(context.branchNumber)}</div>
+                    </div>
+                    <div class="receipt-meta">
+                        <div>Rcpt.: ${escapeExportHtml(bill.receipt_number || bill.invoice_number || '-')}</div>
+                        <div>TAX : ${escapeExportHtml(context.taxId)}</div>
+                        <div>POS : ${escapeExportHtml(context.branchNumber)}</div>
+                        <div>ลูกค้า: ${escapeExportHtml(bill.customer_name || '-')}</div>
+                        <div>พนักงาน: ${escapeExportHtml(context.employeeName)}</div>
+                    </div>
+                    <div class="receipt-line"></div>
+                    <table class="receipt-table">
+                        <thead>
+                            <tr>
+                                <th>รายการ</th>
+                                <th class="num">ราคา</th>
+                                <th class="num">จำนวน</th>
+                                <th class="num">รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody>${itemsHtml}</tbody>
+                    </table>
+                    <div class="receipt-line"></div>
+                    <div class="receipt-summary">
+                        <div class="receipt-summary-row"><span>ราคาสินค้า: (Qty. ${totalQuantity})</span><span>${formatReceiptAmount(bill.subtotal)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>ส่วนลด</span><span>${formatReceiptAmount(bill.discount_amount)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>ราคารวม</span><span>${formatReceiptAmount(bill.taxable_amount)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>VAT 7%</span><span>${formatReceiptAmount(bill.tax_amount)} บาท</span></div>
+                        <div class="receipt-summary-row total"><span>ยอดสุทธิ</span><span>${formatReceiptAmount(bill.grand_total || bill.provider_total)} บาท</span></div>
+                    </div>
+                    <div class="receipt-line"></div>
+                    <div class="receipt-summary">
+                        <div class="receipt-summary-row"><span>เงินสด</span><span>${formatReceiptAmount(payment.cash)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>เงินโอน</span><span>${formatReceiptAmount(payment.transfer)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>บัตรเครดิต</span><span>${formatReceiptAmount(payment.creditCard)} บาท</span></div>
+                        <div class="receipt-summary-row"><span>เงินทอน</span><span>${formatReceiptAmount(payment.change)} บาท</span></div>
+                    </div>
+                    <div class="receipt-footer">
+                        <div><strong>** วันที่: ${escapeExportHtml(formatReceiptDateTime(bill.created_at))} **</strong></div>
+                        ${context.note ? `<div>${escapeExportHtml(context.note)}</div>` : '<div>รวมภาษีมูลค่าเพิ่มแล้ว</div>'}
+                        <div>ขอบคุณที่ใช้บริการ</div>
+                        <div>Powered by matchday</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function exportCompactTaxInvoice() {
+            if (!currentSalesBill) return;
+            openPrintDocument('ใบกำกับภาษีอย่างย่อ', buildCompactTaxInvoiceHtml(currentSalesBill));
+        }
+
+        function exportFullTaxInvoice() {
+            if (!currentSalesBill) return;
+            openPrintDocument('ใบกำกับภาษีเต็มรูป', buildFullTaxInvoiceHtml(currentSalesBill));
         }
 
         async function handleAddProduct(e) {
@@ -1914,6 +2273,17 @@
                             `).join('')}
                         </div>
                     </div>
+                    <div class="rounded-[24px] bg-white p-5 shadow-sm">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-black">เอกสารทางภาษี</h3>
+                            <span class="text-xs uppercase tracking-[0.18em] text-neutral-400">export</span>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <button type="button" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100" onclick="exportCompactTaxInvoice()">📄 ใบกำกับภาษีแบบย่อ</button>
+                            <button type="button" class="rounded-2xl border border-black/10 bg-neutral-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-black" onclick="exportFullTaxInvoice()">🧾 ใบกำกับภาษีเต็มรูป</button>
+                        </div>
+                        <p class="mt-3 text-sm text-neutral-500">ใช้ข้อมูลบริษัทจาก Settings และใช้ชื่อผู้ล็อกอินเป็นพนักงานบนเอกสาร</p>
+                    </div>
                 </div>
             `;
 
@@ -2238,6 +2608,7 @@
                 ['dashboard', loadDashboard],
                 ['restock', loadProductsForRestock],
                 ['settings', loadProviderSettings],
+                ['profile', loadCurrentProviderProfile],
             ];
 
             for (const [label, loader] of loadSteps) {
