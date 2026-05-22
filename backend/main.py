@@ -80,13 +80,35 @@ def calculate_order_pricing(items: List[dict], discount_code: Optional[str] = No
         "platform_fee_amount": 0,
     }
 
-def build_invoice_metadata() -> dict:
+async def build_invoice_metadata() -> dict:
     issued_at = datetime.utcnow()
+    year_part = issued_at.strftime("%y")
+    month_part = issued_at.strftime("%m")
+    prefix = f"INV{year_part}{month_part}"
+    sequence = 1
+
+    latest_order = await db.db["orders"].find_one(
+        {"billing.invoice_number": {"$regex": f"^{prefix}\\d{{5}}$"}},
+        sort=[("billing.invoice_number", -1)]
+    )
+    if latest_order:
+        latest_invoice = str((latest_order.get("billing") or {}).get("invoice_number") or "")
+        latest_seq = latest_invoice[-5:]
+        if latest_seq.isdigit():
+            sequence = int(latest_seq) + 1
+
     return {
-        "invoice_number": f"INV-{issued_at.strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}",
+        "invoice_number": f"{prefix}{str(sequence).zfill(5)}",
         "issued_at": issued_at,
         "currency": "USD",
     }
+
+
+def normalize_payment_method(method: Optional[str]) -> str:
+    raw = str(method or "").strip().lower()
+    if raw in {"credit_card", "card", "บัตรเครดิต", "บัตรเคดิต"}:
+        return "credit_card"
+    return "qrcode"
 
 class AdminProfilePayload(BaseModel):
     name: str
@@ -1406,7 +1428,7 @@ async def admin_checkout(
         })
 
     pricing = calculate_order_pricing(order_items)
-    billing = build_invoice_metadata()
+    billing = await build_invoice_metadata()
     order_data = {
         "user_id": payload.profile_id,
         "user_name": profile.get("username", ""),
@@ -1417,7 +1439,7 @@ async def admin_checkout(
         "total_amount": pricing["grand_total"],
         "notes": (payload.notes or "").strip(),
         "shipping_address": profile.get("address", ""),
-        "payment_method": "admin_checkout",
+        "payment_method": "credit_card",
         "pricing": pricing,
         "billing": billing,
         "created_by_admin": current_user,
@@ -1738,10 +1760,11 @@ async def provider_sales_history(
         pricing = order.get("pricing") or {}
         billing = order.get("billing") or {}
         provider_total = round(sum(item["total_amount"] for item in bill_items), 2)
+        categories = sorted({item["category"] for item in bill_items if item.get("category")})
         payment_history = [
             {
                 "label": "Order created",
-                "channel": order.get("payment_method") or "system",
+                "channel": normalize_payment_method(order.get("payment_method")),
                 "amount": provider_total,
                 "status": "created",
                 "timestamp": order.get("created_at").isoformat() if order.get("created_at") else None,
@@ -1762,7 +1785,7 @@ async def provider_sales_history(
         if order.get("payment_date"):
             payment_history.append({
                 "label": "Payment completed",
-                "channel": order.get("payment_method") or "payment",
+                "channel": normalize_payment_method(order.get("payment_method")),
                 "amount": float(pricing.get("grand_total", order.get("total_amount", provider_total)) or 0),
                 "status": "paid",
                 "timestamp": order.get("payment_date").isoformat() if order.get("payment_date") else None,
@@ -1771,7 +1794,7 @@ async def provider_sales_history(
         elif order.get("slip_reviewed_at"):
             payment_history.append({
                 "label": "Slip reviewed",
-                "channel": order.get("payment_method") or "review",
+                "channel": normalize_payment_method(order.get("payment_method")),
                 "amount": provider_total,
                 "status": str(order.get("payment_status", "") or "reviewed").lower(),
                 "timestamp": order.get("slip_reviewed_at").isoformat() if order.get("slip_reviewed_at") else None,
@@ -1798,6 +1821,7 @@ async def provider_sales_history(
             "tax_amount": float(pricing.get("tax_amount", 0) or 0),
             "taxable_amount": float(pricing.get("taxable_amount", provider_total) or 0),
             "currency": pricing.get("currency", "USD"),
+            "category": ", ".join(categories) if categories else "-",
             "item_count": sum(item["quantity"] for item in bill_items),
             "items": bill_items,
             "payment_history": payment_history,
@@ -2166,7 +2190,7 @@ async def user_create_order(
             [item.dict() for item in order.items],
             order.discount_code
         )
-        billing = build_invoice_metadata()
+        billing = await build_invoice_metadata()
         total_amount = pricing["grand_total"]
         
         provider_ids = []
@@ -2195,7 +2219,7 @@ async def user_create_order(
             "payment_status": PaymentStatus.PENDING,
             "total_amount": total_amount,
             "shipping_address": order.shipping_address,
-            "payment_method": order.payment_method,
+            "payment_method": normalize_payment_method(order.payment_method),
             "discount_code": order.discount_code,
             "pricing": pricing,
             "billing": billing,

@@ -899,6 +899,14 @@
             return '$' + (parseFloat(value || 0)).toFixed(2);
         }
 
+        function formatPaymentMethod(value) {
+            const method = String(value || '').trim().toLowerCase();
+            if (["credit_card", "card", "credit card", "บัตรเครดิต", "บัตรเคดิต"].includes(method)) {
+                return window.EcomI18n.getLanguage() === 'th' ? 'บัตรเครดิต' : 'credit card';
+            }
+            return 'qrcode';
+        }
+
         function formatDate(value) {
             if (!value) return '-';
             const date = new Date(value);
@@ -1487,14 +1495,15 @@
                 [t('invoice')]: [entry.invoice_number || '-', entry.receipt_number || '-'].filter(Boolean).join('\n'),
                 [t('customer')]: [entry.customer_name || '-', entry.customer_email || ''].filter(Boolean).join('\n'),
                 [t('payment')]: entry.payment_status || '-',
-                [t('method')]: entry.payment_history?.[entry.payment_history.length - 1]?.channel || '-',
+                [t('method')]: formatPaymentMethod(entry.payment_history?.[entry.payment_history.length - 1]?.channel),
+                [t('category')]: entry.category || '-',
                 [t('total')]: parseFloat(entry.grand_total || entry.provider_total || 0)
             }));
 
             const worksheet = XLSX.utils.json_to_sheet(rows);
             const range = XLSX.utils.decode_range(worksheet['!ref']);
             for (let row = range.s.r + 1; row <= range.e.r; row += 1) {
-                const totalCell = XLSX.utils.encode_cell({ r: row, c: 6 });
+                const totalCell = XLSX.utils.encode_cell({ r: row, c: 7 });
                 if (worksheet[totalCell]) {
                     worksheet[totalCell].t = 'n';
                     worksheet[totalCell].z = '$0.00';
@@ -1508,6 +1517,7 @@
                 { wch: 30 },
                 { wch: 18 },
                 { wch: 18 },
+                { wch: 20 },
                 { wch: 14 }
             ];
 
@@ -1558,6 +1568,7 @@
                                         <th class="px-6 py-4">${t('customer')}</th>
                                         <th class="px-6 py-4">${t('payment')}</th>
                                         <th class="px-6 py-4">${t('method')}</th>
+                                        <th class="px-6 py-4">${t('category')}</th>
                                         <th class="px-6 py-4">${t('total')}</th>
                                         <th class="px-6 py-4">${t('action')}</th>
                                     </tr>
@@ -1578,7 +1589,8 @@
                                             <td class="px-6 py-5">
                                                 <span class="${getStatusBadgeClass(entry.payment_status)}">${entry.payment_status || '-'}</span>
                                             </td>
-                                            <td class="px-6 py-5 text-neutral-600">${entry.payment_history?.[entry.payment_history.length - 1]?.channel || '-'}</td>
+                                            <td class="px-6 py-5 text-neutral-600">${formatPaymentMethod(entry.payment_history?.[entry.payment_history.length - 1]?.channel)}</td>
+                                            <td class="px-6 py-5 text-neutral-600">${entry.category || '-'}</td>
                                             <td class="px-6 py-5 font-medium text-black">${formatCurrency(entry.grand_total || entry.provider_total)}</td>
                                             <td class="px-6 py-5">
                                                 <button class="rounded-full border border-black bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-neutral-800" onclick="openSalesBill('${entry.order_id}')">
