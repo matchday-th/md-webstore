@@ -150,6 +150,20 @@ class ProviderShopCreate(BaseModel):
     name: str
     email: Optional[str] = None
 
+class ProviderSettingsPayload(BaseModel):
+    vat_registered: bool = False
+    tax_id: Optional[str] = ""
+    tax_name: Optional[str] = ""
+    company_name: Optional[str] = ""
+    address_mode: str = "registered"
+    registered_address_line_1: Optional[str] = ""
+    registered_address_line_2: Optional[str] = ""
+    branch_address_line_1: Optional[str] = ""
+    branch_address_line_2: Optional[str] = ""
+    branch_number: Optional[str] = ""
+    custom_tax_address: Optional[str] = ""
+    note: Optional[str] = ""
+
 # ===================== TRANSACTION LOG (Duplicate Purchase Prevention) =====================
 class TransactionLog(BaseModel):
     id: str = Field(alias="_id")

@@ -43,6 +43,18 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
         }
 
+        .settings-toggle,
+        .settings-address-tab {
+            transition: all 0.2s ease;
+        }
+
+        .settings-toggle.active,
+        .settings-address-tab.active {
+            background: #111111;
+            color: #ffffff;
+            border-color: #111111;
+        }
+
         .tab-content {
             display: none;
         }
@@ -263,6 +275,9 @@
                 <button class="tab-button rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-600 hover:border-black hover:text-black" onclick="switchTab('restock-history', event)" id="tabRestockHistory">
                     📥 Restock History
                 </button>
+                <button class="tab-button rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-600 hover:border-black hover:text-black" onclick="switchTab('provider-settings', event)" id="tabProviderSettings">
+                    ⚙️ Settings
+                </button>
             </div>
 
             <div class="grid w-full gap-4 xl:max-w-3xl xl:grid-cols-2">
@@ -388,6 +403,97 @@
                 <div id="restockHistoryTable">
                     <p class="rounded-3xl border border-dashed border-black/15 bg-neutral-50 px-6 py-10 text-center text-neutral-500">No restock history loaded yet.</p>
                 </div>
+            </div>
+        </div>
+
+        <div id="provider-settings" class="tab-content">
+            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
+                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Provider Settings</p>
+                        <h2 id="providerSettingsTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">⚙️ Tax & Company Settings</h2>
+                    </div>
+                    <p id="providerSettingsSubtitle" class="max-w-md text-sm text-neutral-500">Manage VAT registration and invoice address details for your provider account.</p>
+                </div>
+
+                <form id="providerSettingsForm" onsubmit="saveProviderSettings(event)">
+                    <input type="hidden" id="settingsAddressMode" value="registered">
+                    <input type="hidden" id="settingsVatRegistered" value="false">
+
+                    <div class="mb-8">
+                        <label class="mb-3">VAT</label>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <button type="button" id="vatRegisteredButton" class="settings-toggle rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700" onclick="setVatRegistered(true)">จด VAT</button>
+                            <button type="button" id="vatNotRegisteredButton" class="settings-toggle rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700" onclick="setVatRegistered(false)">ไม่จด VAT</button>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-5 md:grid-cols-2">
+                        <div class="form-group">
+                            <label>เลขประจำตัวผู้เสียภาษี</label>
+                            <input type="text" id="settingsTaxId" placeholder="เลขประจำตัวผู้เสียภาษี">
+                        </div>
+                        <div class="form-group">
+                            <label>ชื่อผู้เสียภาษี</label>
+                            <input type="text" id="settingsTaxName" placeholder="ชื่อผู้เสียภาษี">
+                        </div>
+                        <div class="form-group md:col-span-2">
+                            <label>ชื่อบริษัท</label>
+                            <input type="text" id="settingsCompanyName" placeholder="ชื่อร้านค้า / บริษัท">
+                        </div>
+                    </div>
+
+                    <div class="mb-6 flex flex-wrap gap-3 border-b border-black/10 pb-5">
+                        <button type="button" id="settingsTabRegistered" class="settings-address-tab active rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700" onclick="setSettingsAddressMode('registered')">ใบกำกับภาษี</button>
+                        <button type="button" id="settingsTabBranch" class="settings-address-tab rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700" onclick="setSettingsAddressMode('branch')">ใบกำกับภาษีชื่อ</button>
+                        <button type="button" id="settingsTabCustom" class="settings-address-tab rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700" onclick="setSettingsAddressMode('custom')">ใบกำกับภาษี (ปรับแต่งเอง)</button>
+                    </div>
+
+                    <div id="settingsPanelRegistered" class="grid gap-5 md:grid-cols-2">
+                        <div class="form-group">
+                            <label>ที่อยู่ผู้เสียภาษี</label>
+                            <input type="text" id="settingsRegisteredAddress1" placeholder="ที่อยู่ผู้เสียภาษี">
+                        </div>
+                        <div class="form-group">
+                            <label>ที่อยู่ผู้เสียภาษี 2</label>
+                            <input type="text" id="settingsRegisteredAddress2" placeholder="ที่อยู่ผู้เสียภาษี 2">
+                        </div>
+                        <div class="form-group">
+                            <label>เลขสาขา</label>
+                            <input type="text" id="settingsBranchNumber" placeholder="เลขสาขา">
+                        </div>
+                        <div class="form-group">
+                            <label>ข้อความท้าย ณ ที่จ่าย</label>
+                            <input type="text" id="settingsNote" placeholder="ข้อความท้าย ณ ที่จ่าย">
+                        </div>
+                    </div>
+
+                    <div id="settingsPanelBranch" class="hidden grid gap-5 md:grid-cols-2">
+                        <div class="form-group">
+                            <label>ที่อยู่เสียภาษี 3</label>
+                            <input type="text" id="settingsBranchAddress1" placeholder="ที่อยู่เสียภาษี 3">
+                        </div>
+                        <div class="form-group">
+                            <label>ที่อยู่เสียภาษี 4</label>
+                            <input type="text" id="settingsBranchAddress2" placeholder="ที่อยู่เสียภาษี 4">
+                        </div>
+                        <div class="form-group">
+                            <label>เลขสาขาแบบย่อ</label>
+                            <input type="text" id="settingsBranchNumberAlt" placeholder="เลขสาขาแบบย่อ">
+                        </div>
+                    </div>
+
+                    <div id="settingsPanelCustom" class="hidden">
+                        <div class="form-group">
+                            <label>ที่อยู่ที่จะออกใบกำกับภาษี</label>
+                            <textarea id="settingsCustomTaxAddress" placeholder="ที่อยู่ที่จะออกใบกำกับภาษี"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex justify-end">
+                        <button type="submit" id="saveProviderSettingsButton" class="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800">บันทึกการตั้งค่า</button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -615,6 +721,7 @@
         let restockHistory = [];
         let currentEditingProductId = null;
         let currentSalesBill = null;
+        let providerSettings = null;
 
         const translations = {
             en: {
@@ -629,6 +736,9 @@
                 tabInventoryHub: "📦 Inventory",
                 tabSalesHistory: "🧾 Sales History",
                 tabRestockHistory: "📥 Restock History",
+                tabProviderSettings: "⚙️ Settings",
+                providerSettingsTitle: "⚙️ Tax & Company Settings",
+                providerSettingsSubtitle: "Manage VAT registration and invoice address details for your provider account.",
                 inventoryHubTitle: "📦 Inventory Workspace",
                 openAddProductButton: "➕ Create Product",
                 openRestockButton: "📦 Update Stock",
@@ -740,6 +850,9 @@
                 tabInventoryHub: "📦 คลังสินค้า",
                 tabSalesHistory: "🧾 ประวัติการขาย",
                 tabRestockHistory: "📥 ประวัติเติมสินค้า",
+                tabProviderSettings: "⚙️ ตั้งค่า",
+                providerSettingsTitle: "⚙️ ตั้งค่าภาษีและบริษัท",
+                providerSettingsSubtitle: "กำหนดสถานะ VAT และข้อมูลที่อยู่ออกเอกสารของบัญชีผู้ให้บริการ",
                 inventoryHubTitle: "📦 พื้นที่จัดการคลังสินค้า",
                 openAddProductButton: "➕ สร้างสินค้า",
                 openRestockButton: "📦 เติมสต็อก",
@@ -858,8 +971,8 @@
             document.title = t("title");
             [
                 "pageTitle","pageSubtitle","logoutButton","statProductsLabel","statStockLabel",
-                "statRevenueLabel","statOrdersLabel","tabInventoryHub","tabSalesHistory","tabRestockHistory",
-                "inventoryHubTitle","openAddProductButton","openRestockButton",
+                "statRevenueLabel","statOrdersLabel","tabInventoryHub","tabSalesHistory","tabRestockHistory","tabProviderSettings",
+                "inventoryHubTitle","openAddProductButton","openRestockButton","providerSettingsTitle","providerSettingsSubtitle",
                 "addProductTitle","addNameLabel","addSkuLabel","addCategoryLabel","addPriceLabel",
                 "addStockLabel","addImageLabel","addDescriptionLabel","addProductButton","manageStockTitle",
                 "selectProductLabel","quantityLabel","reasonLabel","addStockButton","myProductsTitle",
@@ -1221,6 +1334,99 @@
                 loadSalesHistory();
             } else if (tabName === 'restock-history') {
                 loadRestockHistory();
+            } else if (tabName === 'provider-settings') {
+                loadProviderSettings();
+            }
+        }
+
+        function setVatRegistered(value) {
+            const normalized = value ? 'true' : 'false';
+            document.getElementById('settingsVatRegistered').value = normalized;
+            document.getElementById('vatRegisteredButton').classList.toggle('active', value);
+            document.getElementById('vatNotRegisteredButton').classList.toggle('active', !value);
+        }
+
+        function setSettingsAddressMode(mode) {
+            document.getElementById('settingsAddressMode').value = mode;
+            document.getElementById('settingsTabRegistered').classList.toggle('active', mode === 'registered');
+            document.getElementById('settingsTabBranch').classList.toggle('active', mode === 'branch');
+            document.getElementById('settingsTabCustom').classList.toggle('active', mode === 'custom');
+            document.getElementById('settingsPanelRegistered').classList.toggle('hidden', mode !== 'registered');
+            document.getElementById('settingsPanelBranch').classList.toggle('hidden', mode !== 'branch');
+            document.getElementById('settingsPanelCustom').classList.toggle('hidden', mode !== 'custom');
+        }
+
+        function fillProviderSettingsForm(settings = {}) {
+            providerSettings = settings;
+            setVatRegistered(Boolean(settings.vat_registered));
+            document.getElementById('settingsTaxId').value = settings.tax_id || '';
+            document.getElementById('settingsTaxName').value = settings.tax_name || '';
+            document.getElementById('settingsCompanyName').value = settings.company_name || '';
+            document.getElementById('settingsRegisteredAddress1').value = settings.registered_address_line_1 || '';
+            document.getElementById('settingsRegisteredAddress2').value = settings.registered_address_line_2 || '';
+            document.getElementById('settingsBranchAddress1').value = settings.branch_address_line_1 || '';
+            document.getElementById('settingsBranchAddress2').value = settings.branch_address_line_2 || '';
+            document.getElementById('settingsBranchNumber').value = settings.branch_number || '';
+            document.getElementById('settingsBranchNumberAlt').value = settings.branch_number || '';
+            document.getElementById('settingsCustomTaxAddress').value = settings.custom_tax_address || '';
+            document.getElementById('settingsNote').value = settings.note || '';
+            setSettingsAddressMode(settings.address_mode || 'registered');
+        }
+
+        async function loadProviderSettings() {
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/settings`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load settings');
+                }
+                const data = await response.json();
+                fillProviderSettingsForm(data.settings || {});
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
+        }
+
+        async function saveProviderSettings(event) {
+            event.preventDefault();
+            const branchNumber = document.getElementById('settingsBranchNumber').value.trim() || document.getElementById('settingsBranchNumberAlt').value.trim();
+            const payload = {
+                vat_registered: document.getElementById('settingsVatRegistered').value === 'true',
+                tax_id: document.getElementById('settingsTaxId').value.trim(),
+                tax_name: document.getElementById('settingsTaxName').value.trim(),
+                company_name: document.getElementById('settingsCompanyName').value.trim(),
+                address_mode: document.getElementById('settingsAddressMode').value,
+                registered_address_line_1: document.getElementById('settingsRegisteredAddress1').value.trim(),
+                registered_address_line_2: document.getElementById('settingsRegisteredAddress2').value.trim(),
+                branch_address_line_1: document.getElementById('settingsBranchAddress1').value.trim(),
+                branch_address_line_2: document.getElementById('settingsBranchAddress2').value.trim(),
+                branch_number: branchNumber,
+                custom_tax_address: document.getElementById('settingsCustomTaxAddress').value.trim(),
+                note: document.getElementById('settingsNote').value.trim()
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/settings`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to save settings');
+                }
+                const data = await response.json();
+                fillProviderSettingsForm(data.settings || payload);
+                showMessage(window.EcomI18n.getLanguage() === 'th' ? '✅ บันทึกการตั้งค่าเรียบร้อยแล้ว' : '✅ Settings saved successfully!', 'success');
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
             }
         }
 
@@ -2031,6 +2237,7 @@
                 ['categories', loadProductCategories],
                 ['dashboard', loadDashboard],
                 ['restock', loadProductsForRestock],
+                ['settings', loadProviderSettings],
             ];
 
             for (const [label, loader] of loadSteps) {

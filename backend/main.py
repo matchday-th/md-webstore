@@ -22,7 +22,7 @@ from .security import (
 from .models import (
     UserCreate, User, ProductCreate, Product, ProductUpdate, OrderCreate, Order, LoginRequest,
     UserRole, OrderStatus, PaymentStatus, RestockRequest, PaymentRequest, SlipUploadRequest, SlipDecisionRequest,
-    ProviderShopCreate
+    ProviderShopCreate, ProviderSettingsPayload
 )
 from .data_loader import load_excel_data, seed_database
 from typing import Optional, List
@@ -174,6 +174,23 @@ def serialize_profile(user: dict) -> dict:
         "address": user.get("address", ""),
         "gender": user.get("gender", ""),
         "age": user.get("age"),
+    }
+
+def serialize_provider_settings(user: dict) -> dict:
+    settings = user.get("provider_settings") or {}
+    return {
+        "vat_registered": bool(settings.get("vat_registered", False)),
+        "tax_id": settings.get("tax_id", "") or "",
+        "tax_name": settings.get("tax_name", "") or "",
+        "company_name": settings.get("company_name", "") or "",
+        "address_mode": settings.get("address_mode", "registered") or "registered",
+        "registered_address_line_1": settings.get("registered_address_line_1", "") or "",
+        "registered_address_line_2": settings.get("registered_address_line_2", "") or "",
+        "branch_address_line_1": settings.get("branch_address_line_1", "") or "",
+        "branch_address_line_2": settings.get("branch_address_line_2", "") or "",
+        "branch_number": settings.get("branch_number", "") or "",
+        "custom_tax_address": settings.get("custom_tax_address", "") or "",
+        "note": settings.get("note", "") or "",
     }
 
 def serialize_product(product: dict) -> dict:
@@ -1467,6 +1484,60 @@ async def admin_checkout(
     return {"order": order_lookup[order_id]}
 
 # ===================== PROVIDER ROUTES (Add Products & Services) =====================
+
+@app.get("/api/provider/settings")
+async def provider_get_settings(current_user: str = Depends(get_current_user)):
+    user = await UserDB.get_user_by_id(current_user)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Provider not found"
+        )
+    return {"settings": serialize_provider_settings(user)}
+
+@app.put("/api/provider/settings")
+async def provider_update_settings(
+    payload: ProviderSettingsPayload,
+    current_user: str = Depends(get_current_user)
+):
+    allowed_modes = {"registered", "branch", "custom"}
+    address_mode = (payload.address_mode or "registered").strip().lower()
+    if address_mode not in allowed_modes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid address mode"
+        )
+
+    settings_payload = {
+        "vat_registered": bool(payload.vat_registered),
+        "tax_id": (payload.tax_id or "").strip(),
+        "tax_name": (payload.tax_name or "").strip(),
+        "company_name": (payload.company_name or "").strip(),
+        "address_mode": address_mode,
+        "registered_address_line_1": (payload.registered_address_line_1 or "").strip(),
+        "registered_address_line_2": (payload.registered_address_line_2 or "").strip(),
+        "branch_address_line_1": (payload.branch_address_line_1 or "").strip(),
+        "branch_address_line_2": (payload.branch_address_line_2 or "").strip(),
+        "branch_number": (payload.branch_number or "").strip(),
+        "custom_tax_address": (payload.custom_tax_address or "").strip(),
+        "note": (payload.note or "").strip(),
+    }
+
+    result = await db.db["users"].update_one(
+        {"_id": parse_object_id(current_user, "user_id")},
+        {"$set": {
+            "provider_settings": settings_payload,
+            "updated_at": datetime.utcnow(),
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Provider not found"
+        )
+
+    user = await UserDB.get_user_by_id(current_user)
+    return {"settings": serialize_provider_settings(user)}
 
 @app.get("/api/provider/shops")
 async def provider_get_shops(current_user: str = Depends(get_current_user)):
