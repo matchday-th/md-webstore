@@ -1745,7 +1745,8 @@
                 addressLine2,
                 note: settings.note || '',
                 vatRegistered: Boolean(settings.vat_registered),
-                employeeName: currentProviderProfile?.name || '-'
+                employeeName: currentProviderProfile?.name || '-',
+                addressMode
             };
         }
 
@@ -1892,6 +1893,14 @@
             const context = getProviderDocumentContext();
             const payment = getPaymentBuckets(bill);
             const totalQuantity = (bill.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+            
+            let invoiceTypeLabel = 'ใบกำกับภาษี';
+            if (context.addressMode === 'branch') {
+                invoiceTypeLabel = 'ใบกำกับภาษีแบบจด vat';
+            } else if (context.addressMode === 'custom') {
+                invoiceTypeLabel = 'ใบกำกับภาษี (ปรับแต่งเอง)';
+            }
+            
             const itemsHtml = (bill.items || []).map((item) => `
                 <tr>
                     <td>
@@ -1908,7 +1917,7 @@
                 <div class="receipt-sheet">
                     <div class="receipt-center">
                         <div class="receipt-heading">${escapeExportHtml(context.companyName)}</div>
-                        <div class="receipt-heading">ใบเสร็จรับเงิน/ใบกำกับภาษีอย่างย่อ</div>
+                        <div class="receipt-heading">ใบเสร็จรับเงิน/${invoiceTypeLabel} อย่างย่อ</div>
                         ${context.addressLine1 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine1)}</div>` : ''}
                         ${context.addressLine2 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine2)}</div>` : ''}
                         <div class="receipt-subheading">สาขา ${escapeExportHtml(context.branchNumber)}</div>
@@ -1960,6 +1969,14 @@
             const context = getProviderDocumentContext();
             const payment = getPaymentBuckets(bill);
             const totalQuantity = (bill.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+            
+            let invoiceTypeLabel = 'ใบกำกับภาษี';
+            if (context.addressMode === 'branch') {
+                invoiceTypeLabel = 'ใบกำกับภาษีแบบจด vat';
+            } else if (context.addressMode === 'custom') {
+                invoiceTypeLabel = 'ใบกำกับภาษี (ปรับแต่งเอง)';
+            }
+            
             const itemsHtml = (bill.items || []).map((item) => `
                 <tr>
                     <td>
@@ -1976,7 +1993,7 @@
                 <div class="receipt-sheet full">
                     <div class="receipt-center">
                         <div class="receipt-heading">${escapeExportHtml(context.companyName)}</div>
-                        <div class="receipt-heading">ใบเสร็จรับเงิน/ใบกำกับภาษีเต็มรูป</div>
+                        <div class="receipt-heading">ใบเสร็จรับเงิน/${invoiceTypeLabel} เต็มรูป</div>
                         ${context.addressLine1 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine1)}</div>` : ''}
                         ${context.addressLine2 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine2)}</div>` : ''}
                         <div class="receipt-subheading">สาขา ${escapeExportHtml(context.branchNumber)}</div>
