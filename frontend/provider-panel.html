@@ -1521,13 +1521,39 @@
             if (normalized.includes('pending') || normalized.includes('waiting') || normalized.includes('awaiting')) {
                 return 'status-badge pending';
             }
-            if (normalized.includes('cancel') || normalized.includes('reject') || normalized.includes('fail')) {
+            if (normalized.includes('cancel') || normalized.includes('reject') || normalized.includes('fail') || normalized.includes('refund') || normalized.includes('return')) {
                 return 'status-badge cancel';
             }
             if (normalized.includes('paid') || normalized.includes('complete') || normalized.includes('approve') || normalized.includes('success') || normalized.includes('ship') || normalized.includes('deliver')) {
                 return 'status-badge paid';
             }
             return 'status-badge';
+        }
+
+        function getSalesBillPrimaryStatus(bill) {
+            const fulfillment = String(bill?.fulfillment_status || '').trim().toLowerCase();
+            const orderStatus = String(bill?.status || '').trim().toLowerCase();
+            const paymentStatus = String(bill?.payment_status || bill?.payment_status_key || '').trim().toLowerCase();
+
+            if (fulfillment === 'cancelled_by_provider' || orderStatus === 'cancelled') {
+                return { key: 'cancelled', label: 'ยกเลิกแล้ว' };
+            }
+            if (fulfillment === 'product_returned') {
+                return { key: 'product_returned', label: 'คืนสินค้าแล้ว' };
+            }
+            if (fulfillment === 'match_returned') {
+                return { key: 'match_returned', label: 'คืนแมทช์แล้ว' };
+            }
+            if (paymentStatus === 'refunded') {
+                return { key: 'refunded', label: 'คืนเงินแล้ว' };
+            }
+            if (paymentStatus === 'paid') {
+                return { key: 'paid', label: 'ชำระเงินแล้ว' };
+            }
+            if (paymentStatus === 'pending_slip_verification') {
+                return { key: 'pending', label: 'รอตรวจสลิป' };
+            }
+            return { key: paymentStatus || orderStatus || 'pending', label: bill?.payment_status || bill?.status || 'Pending' };
         }
 
         function openProductModal() {
@@ -2850,7 +2876,9 @@
             currentSalesBill = salesHistory.find((entry) => entry.order_id === orderId) || null;
             if (!currentSalesBill) return;
 
-            const paidAmount = String(currentSalesBill.payment_status_key || '').includes('paid')
+            const primaryStatus = getSalesBillPrimaryStatus(currentSalesBill);
+            const cancelLocked = ['cancelled', 'product_returned', 'match_returned'].includes(primaryStatus.key);
+            const paidAmount = primaryStatus.key === 'paid'
                 ? Number(currentSalesBill.grand_total || currentSalesBill.provider_total || 0)
                 : 0;
             const outstandingAmount = Number((currentSalesBill.grand_total || currentSalesBill.provider_total || 0) - paidAmount).toFixed(2);
@@ -2918,11 +2946,11 @@
                     </div>
                     <div class="mt-auto flex flex-wrap items-center gap-3 pt-2">
                         <button type="button" class="rounded-xl bg-red-50 px-5 py-4 text-sm font-semibold text-red-700 transition hover:bg-red-100" onclick="handleSalesBillAction('delete')">🔒 ลบบิล (del)</button>
-                        <button type="button" class="rounded-xl bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-700 transition hover:bg-amber-100" onclick="handleSalesBillAction('cancel')">↩ ยกเลิก (cancel)</button>
-                        <button type="button" class="rounded-xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100" onclick="handleSalesBillAction('return_match')">⊗ คืนแมทช์</button>
-                        <button type="button" class="rounded-xl bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-700 transition hover:bg-orange-100" onclick="handleSalesBillAction('return_product')">📦 คืนสินค้า</button>
-                        <button type="button" class="rounded-xl bg-cyan-50 px-5 py-4 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100" onclick="handleSalesBillAction('refund_money')">💸 คืนเงิน</button>
-                        <button type="button" class="rounded-xl bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100" onclick="handleSalesBillAction('mark_paid')">ชำระเงิน</button>
+                        <button type="button" class="rounded-xl bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50" onclick="handleSalesBillAction('cancel')" ${cancelLocked ? 'disabled' : ''}>↩ ยกเลิก (cancel)</button>
+                        <button type="button" class="rounded-xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50" onclick="handleSalesBillAction('return_match')" ${cancelLocked ? 'disabled' : ''}>⊗ คืนแมทช์</button>
+                        <button type="button" class="rounded-xl bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50" onclick="handleSalesBillAction('return_product')" ${cancelLocked ? 'disabled' : ''}>📦 คืนสินค้า</button>
+                        <button type="button" class="rounded-xl bg-cyan-50 px-5 py-4 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50" onclick="handleSalesBillAction('refund_money')" ${primaryStatus.key === 'refunded' ? 'disabled' : ''}>💸 คืนเงิน</button>
+                        <button type="button" class="rounded-xl bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50" onclick="handleSalesBillAction('mark_paid')" ${primaryStatus.key === 'paid' ? 'disabled' : ''}>ชำระเงิน</button>
                     </div>
                 </div>
             `;
@@ -2933,7 +2961,7 @@
                         <div class="text-center">
                             <div class="text-sm text-neutral-500">ยอดรวม</div>
                             <div class="mt-1 text-5xl font-semibold tracking-tight text-black">${Math.round(Number(currentSalesBill.grand_total || currentSalesBill.provider_total || 0) * 100) / 100}</div>
-                            <div class="mt-3 inline-flex ${getStatusBadgeClass(currentSalesBill.payment_status)} px-4 py-2 text-sm">${currentSalesBill.payment_status || '-'}</div>
+                            <div class="mt-3 inline-flex ${getStatusBadgeClass(primaryStatus.key)} px-4 py-2 text-sm">${primaryStatus.label}</div>
                         </div>
                         <div class="mt-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 text-sm text-neutral-500">
                             <span>ชำระแล้ว<br><strong class="text-lg text-black">${paidAmount.toFixed(2)}</strong></span>
