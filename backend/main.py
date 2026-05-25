@@ -22,7 +22,8 @@ from .security import (
 from .models import (
     UserCreate, User, ProductCreate, Product, ProductUpdate, OrderCreate, Order, LoginRequest,
     UserRole, OrderStatus, PaymentStatus, RestockRequest, PaymentRequest, SlipUploadRequest, SlipDecisionRequest,
-    ProviderShopCreate, ProviderSettingsPayload, ProviderStaffCreatePayload, ProviderStaffUpdatePayload
+    ProviderShopCreate, ProviderSettingsPayload, ProviderStaffCreatePayload, ProviderStaffUpdatePayload,
+    ProviderFullTaxInvoiceStatusPayload
 )
 from .data_loader import load_excel_data, seed_database
 from typing import Optional, List
@@ -2067,8 +2068,11 @@ async def provider_sales_history(
             "order_id": str(order["_id"]),
             "invoice_number": billing.get("invoice_number") or "",
             "receipt_number": f"R{str(order.get('_id'))[-8:].upper()}",
+            "full_tax_invoice_status": billing.get("full_tax_invoice_status") or "not_issued",
             "customer_name": order.get("customer_name") or order.get("user_name") or "Unknown user",
             "customer_email": order.get("customer_email") or "",
+            "customer_address": order.get("shipping_address") or "-",
+            "customer_tax_id": order.get("customer_tax_id") or "-",
             "status": normalize_order_status(order.get("status")).title(),
             "payment_status": str(order.get("payment_status", "")).title(),
             "payment_status_key": str(order.get("payment_status", "")).lower(),
@@ -2090,6 +2094,40 @@ async def provider_sales_history(
         })
 
     return {"history": bills}
+
+
+@app.put("/api/provider/orders/{order_id}/full-tax-invoice-status")
+async def provider_update_full_tax_invoice_status(
+    order_id: str,
+    payload: ProviderFullTaxInvoiceStatusPayload,
+    current_user: str = Depends(get_current_user)
+):
+    await get_provider_access_context(current_user, "sales_history")
+    provider_scopes = await get_provider_scopes(current_user)
+    normalized_status = str(payload.status or "").strip().lower()
+    if normalized_status not in {"issued", "not_issued"}:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid full tax invoice status")
+
+    order_object_id = parse_object_id(order_id, "order_id")
+    order = await db.db["orders"].find_one({
+        "_id": order_object_id,
+        "$or": [
+            {"provider_id": {"$in": provider_scopes}},
+            {"provider_ids": {"$in": provider_scopes}},
+        ]
+    })
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+
+    await db.db["orders"].update_one(
+        {"_id": order_object_id},
+        {"$set": {
+            "billing.full_tax_invoice_status": normalized_status,
+            "billing.full_tax_invoice_status_updated_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+        }}
+    )
+    return {"order_id": order_id, "full_tax_invoice_status": normalized_status}
 
 
 @app.get("/api/provider/restock-history")

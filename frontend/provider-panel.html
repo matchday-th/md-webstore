@@ -1718,6 +1718,16 @@
             return Number(value || 0).toFixed(2);
         }
 
+        function formatInvoiceDateOnly(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '-';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = String(date.getFullYear());
+            return `${day}/${month}/${year}`;
+        }
+
         function getProviderDocumentContext() {
             const settings = providerSettings || {};
             const addressMode = settings.address_mode || 'registered';
@@ -1745,7 +1755,7 @@
                 addressLine2,
                 note: settings.note || '',
                 vatRegistered: Boolean(settings.vat_registered),
-                employeeName: currentProviderProfile?.name || '-',
+                employeeName: currentProviderProfile?.name || currentProviderProfile?.username || '-',
                 addressMode
             };
         }
@@ -1758,12 +1768,17 @@
                 cash: 0,
                 transfer: method === 'qrcode' ? total : 0,
                 creditCard: method === 'credit card' ? total : 0,
-                change: 0
+                change: 0,
+                method
             };
         }
 
+        function renderPrintCheckbox(checked) {
+            return `<span class="tax-checkbox${checked ? ' checked' : ''}">${checked ? '&#10003;' : ''}</span>`;
+        }
+
         function openPrintDocument(title, html) {
-            const printWindow = window.open('', '_blank', 'width=720,height=960');
+            const printWindow = window.open('', '_blank', 'width=980,height=1200');
             if (!printWindow) {
                 showMessage(window.EcomI18n.getLanguage() === 'th' ? '❌ เบราว์เซอร์บล็อกหน้าต่างพิมพ์' : '❌ Popup blocked by browser', 'error');
                 return;
@@ -1864,6 +1879,146 @@
                             font-size: 12px;
                             line-height: 1.55;
                         }
+                        .tax-sheet {
+                            width: 100%;
+                            max-width: 794px;
+                            background: #ffffff;
+                            padding: 20px 24px 24px;
+                            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+                            font-size: 12px;
+                            line-height: 1.45;
+                        }
+                        .tax-top {
+                            display: flex;
+                            justify-content: space-between;
+                            gap: 16px;
+                            align-items: flex-start;
+                        }
+                        .tax-company-name {
+                            font-size: 18px;
+                            font-weight: 700;
+                        }
+                        .tax-page {
+                            font-size: 12px;
+                        }
+                        .tax-company-meta {
+                            margin-top: 6px;
+                        }
+                        .tax-title {
+                            margin: 10px 0 12px;
+                            text-align: center;
+                            font-size: 18px;
+                            font-weight: 700;
+                        }
+                        .tax-head-grid {
+                            display: grid;
+                            grid-template-columns: 1.15fr 0.85fr;
+                            gap: 10px;
+                            margin-bottom: 6px;
+                        }
+                        .tax-box {
+                            min-height: 106px;
+                            border: 1px solid #111111;
+                            border-radius: 4px;
+                            padding: 8px 10px;
+                        }
+                        .tax-row {
+                            display: flex;
+                            gap: 8px;
+                            margin-bottom: 8px;
+                        }
+                        .tax-label {
+                            min-width: 72px;
+                            font-weight: 700;
+                        }
+                        .tax-wide-label {
+                            min-width: 116px;
+                            font-weight: 700;
+                        }
+                        .tax-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 8px;
+                            table-layout: fixed;
+                        }
+                        .tax-table th,
+                        .tax-table td {
+                            border: 1px solid #111111;
+                            padding: 6px 6px;
+                            vertical-align: top;
+                        }
+                        .tax-table th {
+                            text-align: center;
+                            font-weight: 700;
+                        }
+                        .tax-table td.num {
+                            text-align: right;
+                        }
+                        .tax-summary-grid {
+                            display: grid;
+                            grid-template-columns: 1.2fr 0.9fr;
+                        }
+                        .tax-summary-left,
+                        .tax-summary-right {
+                            border: 1px solid #111111;
+                            border-top: none;
+                            min-height: 140px;
+                            padding: 10px;
+                        }
+                        .tax-summary-right {
+                            border-left: none;
+                        }
+                        .tax-summary-line {
+                            display: flex;
+                            justify-content: space-between;
+                            gap: 12px;
+                            margin-bottom: 6px;
+                        }
+                        .tax-summary-line.total {
+                            font-size: 16px;
+                            font-weight: 700;
+                        }
+                        .tax-payment-row {
+                            margin-top: 14px;
+                            display: flex;
+                            gap: 18px;
+                            flex-wrap: wrap;
+                            align-items: center;
+                        }
+                        .tax-checkbox {
+                            display: inline-flex;
+                            width: 15px;
+                            height: 15px;
+                            border: 1px solid #111111;
+                            align-items: center;
+                            justify-content: center;
+                            margin-right: 6px;
+                            font-size: 12px;
+                            line-height: 1;
+                        }
+                        .tax-payment-item {
+                            display: inline-flex;
+                            align-items: center;
+                        }
+                        .tax-signatures {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 28px;
+                            margin-top: 22px;
+                            align-items: end;
+                        }
+                        .tax-signature-box {
+                            text-align: center;
+                        }
+                        .tax-signature-line {
+                            border-bottom: 1px solid #111111;
+                            height: 34px;
+                            margin-top: 32px;
+                        }
+                        @page {
+                            size: A4;
+                            margin: 12mm;
+                        }
                         @media print {
                             body {
                                 background: #ffffff;
@@ -1871,7 +2026,8 @@
                             .print-shell {
                                 padding: 0;
                             }
-                            .receipt-sheet {
+                            .receipt-sheet,
+                            .tax-sheet {
                                 box-shadow: none;
                             }
                         }
@@ -1889,18 +2045,12 @@
             }, 250);
         }
 
-        function buildCompactTaxInvoiceHtml(bill) {
+        function buildCompactTaxInvoiceHtml(bill, options = {}) {
             const context = getProviderDocumentContext();
             const payment = getPaymentBuckets(bill);
             const totalQuantity = (bill.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-            
-            let invoiceTypeLabel = 'ใบกำกับภาษี';
-            if (context.addressMode === 'branch') {
-                invoiceTypeLabel = 'ใบกำกับภาษีแบบจด vat';
-            } else if (context.addressMode === 'custom') {
-                invoiceTypeLabel = 'ใบกำกับภาษี (ปรับแต่งเอง)';
-            }
-            
+            const vatRegistered = typeof options.vatRegistered === 'boolean' ? options.vatRegistered : context.vatRegistered;
+            const invoiceTypeLabel = options.title || (vatRegistered ? 'ใบกำกับภาษีแบบย่อแบบจด vat' : 'ใบกำกับภาษีแบบย่อแบบไม่จด vat');
             const itemsHtml = (bill.items || []).map((item) => `
                 <tr>
                     <td>
@@ -1917,14 +2067,14 @@
                 <div class="receipt-sheet">
                     <div class="receipt-center">
                         <div class="receipt-heading">${escapeExportHtml(context.companyName)}</div>
-                        <div class="receipt-heading">ใบเสร็จรับเงิน/${invoiceTypeLabel} อย่างย่อ</div>
+                        <div class="receipt-heading">ใบเสร็จรับเงิน/${escapeExportHtml(invoiceTypeLabel)}</div>
                         ${context.addressLine1 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine1)}</div>` : ''}
                         ${context.addressLine2 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine2)}</div>` : ''}
                         <div class="receipt-subheading">สาขา ${escapeExportHtml(context.branchNumber)}</div>
                     </div>
                     <div class="receipt-meta">
                         <div>Rcpt.: ${escapeExportHtml(bill.receipt_number || bill.invoice_number || '-')}</div>
-                        <div>TAX : ${escapeExportHtml(context.vatRegistered ? context.taxId : '-')}</div>
+                        <div>TAX : ${escapeExportHtml(vatRegistered ? context.taxId : '-')}</div>
                         <div>POS : ${escapeExportHtml(context.branchNumber)}</div>
                         <div>ลูกค้า: ${escapeExportHtml(bill.customer_name || '-')}</div>
                         <div>พนักงาน: ${escapeExportHtml(context.employeeName)}</div>
@@ -1945,8 +2095,8 @@
                     <div class="receipt-summary">
                         <div class="receipt-summary-row"><span>ราคาสินค้า: (Qty. ${totalQuantity})</span><span>${formatReceiptAmount(bill.subtotal)} บาท</span></div>
                         <div class="receipt-summary-row"><span>ส่วนลด</span><span>${formatReceiptAmount(bill.discount_amount)} บาท</span></div>
-                        ${context.vatRegistered ? `<div class="receipt-summary-row"><span>ราคารวม</span><span>${formatReceiptAmount(bill.taxable_amount)} บาท</span></div>` : ''}
-                        ${context.vatRegistered ? `<div class="receipt-summary-row"><span>VAT 7%</span><span>${formatReceiptAmount(bill.tax_amount)} บาท</span></div>` : ''}
+                        ${vatRegistered ? `<div class="receipt-summary-row"><span>ราคารวม</span><span>${formatReceiptAmount(bill.taxable_amount)} บาท</span></div>` : ''}
+                        ${vatRegistered ? `<div class="receipt-summary-row"><span>VAT 7%</span><span>${formatReceiptAmount(bill.tax_amount)} บาท</span></div>` : ''}
                         <div class="receipt-summary-row total"><span>ยอดสุทธิ</span><span>${formatReceiptAmount(bill.grand_total || bill.provider_total)} บาท</span></div>
                     </div>
                     <div class="receipt-line"></div>
@@ -1969,87 +2119,144 @@
             const context = getProviderDocumentContext();
             const payment = getPaymentBuckets(bill);
             const totalQuantity = (bill.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-            
-            let invoiceTypeLabel = 'ใบกำกับภาษี';
-            if (context.addressMode === 'branch') {
-                invoiceTypeLabel = 'ใบกำกับภาษีแบบจด vat';
-            } else if (context.addressMode === 'custom') {
-                invoiceTypeLabel = 'ใบกำกับภาษี (ปรับแต่งเอง)';
-            }
-            
-            const itemsHtml = (bill.items || []).map((item) => `
+            const referenceCode = [bill.receipt_number, bill.invoice_number].filter(Boolean).join(' / ') || '-';
+            const itemRows = (bill.items || []).map((item, index) => `
                 <tr>
+                    <td style="text-align:center;">${index + 1}</td>
                     <td>
                         <div>${escapeExportHtml(item.product_name || '-')}</div>
                         <div>(${escapeExportHtml(item.category || 'สินค้า')})</div>
                     </td>
+                    <td style="text-align:center;">${Number(item.quantity || 0)}</td>
                     <td class="num">${formatReceiptAmount(item.unit_price)}</td>
-                    <td class="num">${Number(item.quantity || 0)}</td>
+                    <td class="num">0.00</td>
                     <td class="num">${formatReceiptAmount(item.total_amount)}</td>
                 </tr>
             `).join('');
 
             return `
-                <div class="receipt-sheet full">
-                    <div class="receipt-center">
-                        <div class="receipt-heading">${escapeExportHtml(context.companyName)}</div>
-                        <div class="receipt-heading">ใบเสร็จรับเงิน/${invoiceTypeLabel} เต็มรูป</div>
-                        ${context.addressLine1 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine1)}</div>` : ''}
-                        ${context.addressLine2 ? `<div class="receipt-subheading">${escapeExportHtml(context.addressLine2)}</div>` : ''}
-                        <div class="receipt-subheading">สาขา ${escapeExportHtml(context.branchNumber)}</div>
+                <div class="tax-sheet">
+                    <div class="tax-top">
+                        <div>
+                            <div class="tax-company-name">${escapeExportHtml(context.companyName)}</div>
+                            ${context.addressLine1 ? `<div class="tax-company-meta">${escapeExportHtml(context.addressLine1)}</div>` : ''}
+                            ${context.addressLine2 ? `<div class="tax-company-meta">${escapeExportHtml(context.addressLine2)}</div>` : ''}
+                            <div class="tax-company-meta"><strong>เลขประจำตัวผู้เสียภาษี</strong> ${escapeExportHtml(context.taxId)} <span style="margin-left:12px;">สาขาที่ออกใบกำกับภาษี ${escapeExportHtml(context.branchNumber)}</span></div>
+                        </div>
+                        <div class="tax-page">หน้า 1 / 1</div>
                     </div>
-                    <div class="receipt-meta">
-                        <div>Rcpt.: ${escapeExportHtml(bill.receipt_number || bill.invoice_number || '-')}</div>
-                        <div>TAX : ${escapeExportHtml(context.taxId)}</div>
-                        <div>POS : ${escapeExportHtml(context.branchNumber)}</div>
-                        <div>ลูกค้า: ${escapeExportHtml(bill.customer_name || '-')}</div>
-                        <div>พนักงาน: ${escapeExportHtml(context.employeeName)}</div>
+                    <div class="tax-title">ใบเสร็จรับเงิน/ใบกำกับภาษี</div>
+                    <div class="tax-head-grid">
+                        <div class="tax-box">
+                            <div class="tax-row"><div class="tax-label">ผู้ซื้อ</div><div>${escapeExportHtml(bill.customer_name || '-')}</div></div>
+                            <div class="tax-row"><div class="tax-label">ที่อยู่</div><div>${escapeExportHtml(bill.customer_address || '-')}</div></div>
+                            <div class="tax-row" style="margin-top:32px;"><div class="tax-wide-label">เลขประจำตัวผู้เสียภาษี</div><div>${escapeExportHtml(bill.customer_tax_id || '-')}</div></div>
+                        </div>
+                        <div class="tax-box">
+                            <div class="tax-row"><div class="tax-label">เลขที่</div><div>${escapeExportHtml(bill.invoice_number || '-')}</div></div>
+                            <div class="tax-row"><div class="tax-label">วันที่</div><div>${escapeExportHtml(formatInvoiceDateOnly(bill.created_at))}</div></div>
+                            <div class="tax-row"><div class="tax-wide-label">เอกสารอ้างอิง</div><div>${escapeExportHtml(referenceCode)}</div></div>
+                        </div>
                     </div>
-                    <div class="receipt-line"></div>
-                    <table class="receipt-table">
+                    <table class="tax-table">
                         <thead>
                             <tr>
-                                <th>รายการ</th>
-                                <th class="num">ราคา</th>
-                                <th class="num">จำนวน</th>
-                                <th class="num">รวม</th>
+                                <th style="width:7%;">ลำดับที่<br>No.</th>
+                                <th style="width:42%;">ชื่อสินค้า/บริการ<br>Description</th>
+                                <th style="width:8%;">จำนวน<br>Qty.</th>
+                                <th style="width:12%;">ราคา/หน่วย<br>Unit Price</th>
+                                <th style="width:12%;">ส่วนลด<br>Discount</th>
+                                <th style="width:19%;">จำนวนเงิน<br>Amount</th>
                             </tr>
                         </thead>
-                        <tbody>${itemsHtml}</tbody>
+                        <tbody>
+                            ${itemRows}
+                        </tbody>
                     </table>
-                    <div class="receipt-line"></div>
-                    <div class="receipt-summary">
-                        <div class="receipt-summary-row"><span>ราคาสินค้า: (Qty. ${totalQuantity})</span><span>${formatReceiptAmount(bill.subtotal)} บาท</span></div>
-                        <div class="receipt-summary-row"><span>ส่วนลด</span><span>${formatReceiptAmount(bill.discount_amount)} บาท</span></div>
-                        <div class="receipt-summary-row"><span>ราคารวม</span><span>${formatReceiptAmount(bill.taxable_amount)} บาท</span></div>
-                        <div class="receipt-summary-row"><span>VAT 7%</span><span>${formatReceiptAmount(bill.tax_amount)} บาท</span></div>
-                        <div class="receipt-summary-row total"><span>ยอดสุทธิ</span><span>${formatReceiptAmount(bill.grand_total || bill.provider_total)} บาท</span></div>
+                    <div class="tax-summary-grid">
+                        <div class="tax-summary-left">
+                            <div><strong>จำนวนเงิน (ตัวอักษร)</strong></div>
+                            <div style="margin-top:6px;">${escapeExportHtml(context.note || '-')}</div>
+                            <div style="margin-top:18px;"><strong>หมายเหตุ :</strong> ${escapeExportHtml(bill.customer_name || 'Sales bill')}</div>
+                        </div>
+                        <div class="tax-summary-right">
+                            <div class="tax-summary-line"><span>หักส่วนลดอื่น ๆ</span><span>${formatReceiptAmount(bill.discount_amount)} </span></div>
+                            <div class="tax-summary-line"><span>รวม</span><span>${formatReceiptAmount(bill.subtotal)}</span></div>
+                            <div class="tax-summary-line"><span>จำนวนเงินก่อนภาษีมูลค่าเพิ่ม</span><span>${formatReceiptAmount(bill.taxable_amount)}</span></div>
+                            <div class="tax-summary-line"><span>ภาษีมูลค่าเพิ่ม 7%</span><span>${formatReceiptAmount(bill.tax_amount)}</span></div>
+                            <div class="tax-summary-line total"><span>จำนวนเงินรวมทั้งสิ้น</span><span>${formatReceiptAmount(bill.grand_total || bill.provider_total)}</span></div>
+                        </div>
                     </div>
-                    <div class="receipt-line"></div>
-                    <div class="receipt-summary">
-                        <div class="receipt-summary-row"><span>เงินสด</span><span>${formatReceiptAmount(payment.cash)} บาท</span></div>
-                        <div class="receipt-summary-row"><span>เงินโอน</span><span>${formatReceiptAmount(payment.transfer)} บาท</span></div>
-                        <div class="receipt-summary-row"><span>บัตรเครดิต</span><span>${formatReceiptAmount(payment.creditCard)} บาท</span></div>
-                        <div class="receipt-summary-row"><span>เงินทอน</span><span>${formatReceiptAmount(payment.change)} บาท</span></div>
+                    <div class="tax-payment-row">
+                        <span>ชำระด้วย</span>
+                        <span class="tax-payment-item">${renderPrintCheckbox(payment.cash > 0)}เงินสด</span>
+                        <span class="tax-payment-item">${renderPrintCheckbox(payment.transfer > 0)}เงินโอน</span>
+                        <span class="tax-payment-item">${renderPrintCheckbox(false)}เช็ค</span>
+                        <span class="tax-payment-item">${renderPrintCheckbox(payment.creditCard > 0)}บัตรเครดิต</span>
                     </div>
-                    <div class="receipt-footer">
-                        <div><strong>** วันที่: ${escapeExportHtml(formatReceiptDateTime(bill.created_at))} **</strong></div>
-                        ${context.note ? `<div>${escapeExportHtml(context.note)}</div>` : '<div>รวมภาษีมูลค่าเพิ่มแล้ว</div>'}
-                        <div>ขอบคุณที่ใช้บริการ</div>
-                        <div>Powered by matchday</div>
+                    <div style="margin-top:10px;">ธนาคาร/สาขา ________________________________________</div>
+                    <div style="margin-top:6px;">เลขที่ ____________________ วันที่ ____________________</div>
+                    <div style="margin-top:6px;">(กรณีจ่ายเงินเช็คโปรดระวังเงินจะสมบูรณ์ต่อเมื่อได้เก็บเงินตามเช็คได้แล้ว)</div>
+                    <div class="tax-signatures">
+                        <div class="tax-signature-box">
+                            <div>ลงชื่อ ____________________ ผู้รับเงิน/เช็ค วันที่ __________</div>
+                        </div>
+                        <div class="tax-signature-box">
+                            <div>${escapeExportHtml(context.companyName)}</div>
+                            <div class="tax-signature-line"></div>
+                            <div>ผู้รับมอบอำนาจ</div>
+                            <div style="margin-top:6px;">${escapeExportHtml(context.employeeName)}</div>
+                        </div>
                     </div>
                 </div>
             `;
         }
 
-        function exportCompactTaxInvoice() {
+        function exportCompactTaxInvoiceNoVat() {
             if (!currentSalesBill) return;
-            openPrintDocument('ใบกำกับภาษีอย่างย่อ', buildCompactTaxInvoiceHtml(currentSalesBill));
+            openPrintDocument('ใบกำกับภาษีแบบย่อแบบไม่จด VAT', buildCompactTaxInvoiceHtml(currentSalesBill, {
+                vatRegistered: false,
+                title: 'ใบกำกับภาษีแบบย่อแบบไม่จด vat'
+            }));
+        }
+
+        function exportCompactTaxInvoiceVat() {
+            if (!currentSalesBill) return;
+            openPrintDocument('ใบกำกับภาษีแบบย่อแบบจด VAT', buildCompactTaxInvoiceHtml(currentSalesBill, {
+                vatRegistered: true,
+                title: 'ใบกำกับภาษีแบบย่อแบบจด vat'
+            }));
         }
 
         function exportFullTaxInvoice() {
             if (!currentSalesBill) return;
             openPrintDocument('ใบกำกับภาษีเต็มรูป', buildFullTaxInvoiceHtml(currentSalesBill));
+        }
+
+        async function updateFullTaxInvoiceStatus(value) {
+            if (!currentSalesBill || !value) return;
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/orders/${currentSalesBill.order_id}/full-tax-invoice-status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: value })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to update full tax invoice status');
+                }
+                currentSalesBill.full_tax_invoice_status = value;
+                const matched = salesHistory.find((entry) => entry.order_id === currentSalesBill.order_id);
+                if (matched) {
+                    matched.full_tax_invoice_status = value;
+                }
+                showMessage(value === 'issued' ? '✅ บันทึกสถานะใบกำกับภาษีเต็มรูป: ออกแล้ว' : '✅ บันทึกสถานะใบกำกับภาษีเต็มรูป: ยังไม่ได้ออก', 'success');
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
         }
 
         function renderProviderStaffTable() {
@@ -2676,8 +2883,9 @@
                             <h3 class="text-lg font-semibold text-black">เอกสารทางภาษี</h3>
                             <span class="text-xs uppercase tracking-[0.18em] text-neutral-400">export</span>
                         </div>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <button type="button" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100" onclick="exportCompactTaxInvoice()">📄 ใบกำกับภาษีแบบย่อแบบ vat</button>
+                        <div class="grid gap-3">
+                            <button type="button" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100" onclick="exportCompactTaxInvoiceNoVat()">📄 ใบกำกับภาษีแบบย่อแบบไม่จด vat</button>
+                            <button type="button" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 transition hover:border-amber-300 hover:bg-amber-100" onclick="exportCompactTaxInvoiceVat()">📄 ใบกำกับภาษีแบบย่อแบบจด vat</button>
                             <button type="button" class="rounded-2xl border border-black/10 bg-neutral-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-black" onclick="exportFullTaxInvoice()">🧾 ใบกำกับภาษีเต็มรูป</button>
                         </div>
                         <p class="mt-3 text-sm text-neutral-500">ใช้ข้อมูลบริษัทจาก Settings และใช้ชื่อผู้ล็อกอินเป็นพนักงานบนเอกสาร</p>
@@ -2686,10 +2894,9 @@
                         <div class="mb-4">
                             <h3 class="text-lg font-semibold text-black">สถานะการออกใบกำกับภาษีเต็มรูป</h3>
                         </div>
-                        <select id="fullTaxInvoiceStatus" class="w-full rounded-[18px] border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black">
-                            <option value="">-- เลือกสถานะ --</option>
-                            <option value="issued">ออกแล้ว</option>
-                            <option value="not_issued">ยังไม่ได้ออก</option>
+                        <select id="fullTaxInvoiceStatus" onchange="updateFullTaxInvoiceStatus(this.value)" class="w-full rounded-[18px] border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black">
+                            <option value="issued" ${currentSalesBill.full_tax_invoice_status === 'issued' ? 'selected' : ''}>ออกแล้ว</option>
+                            <option value="not_issued" ${currentSalesBill.full_tax_invoice_status !== 'issued' ? 'selected' : ''}>ยังไม่ได้ออก</option>
                         </select>
                     </div>
                 </div>

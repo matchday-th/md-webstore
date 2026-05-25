@@ -179,6 +179,9 @@ class ProviderStaffUpdatePayload(BaseModel):
     permission_level: Optional[int] = Field(default=None, ge=1, le=4)
     is_active: Optional[bool] = True
 
+class ProviderFullTaxInvoiceStatusPayload(BaseModel):
+    status: str
+
 # ===================== TRANSACTION LOG (Duplicate Purchase Prevention) =====================
 class TransactionLog(BaseModel):
     id: str = Field(alias="_id")
