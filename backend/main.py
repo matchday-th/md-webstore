@@ -23,7 +23,7 @@ from .models import (
     UserCreate, User, ProductCreate, Product, ProductUpdate, OrderCreate, Order, LoginRequest,
     UserRole, OrderStatus, PaymentStatus, RestockRequest, PaymentRequest, SlipUploadRequest, SlipDecisionRequest,
     ProviderShopCreate, ProviderSettingsPayload, ProviderStaffCreatePayload, ProviderStaffUpdatePayload,
-    ProviderFullTaxInvoiceStatusPayload
+    ProviderFullTaxInvoiceStatusPayload, ProviderOrderActionPayload
 )
 from .data_loader import load_excel_data, seed_database
 from typing import Optional, List
@@ -1965,6 +1965,39 @@ async def provider_dashboard(
     return dashboard
 
 
+async def restore_provider_order_inventory(order: dict, provider_scopes: list[str], owner_provider_id: str, reason: str) -> bool:
+    restored_provider_ids = set(str(item) for item in (order.get("inventory_restored_provider_ids") or []))
+    if owner_provider_id in restored_provider_ids:
+        return False
+
+    restored_any = False
+    for item in order.get("items", []):
+        product_id = str(item.get("product_id") or "").strip()
+        quantity = int(item.get("quantity", 0) or 0)
+        if not product_id or quantity <= 0:
+            continue
+        product = await ProductDB.get_product_by_id(product_id)
+        if not product:
+            continue
+        if str(product.get("provider_id") or "") not in provider_scopes:
+            continue
+        result = await ProductDB.update_product_stock(
+            product_id=product_id,
+            quantity_change=quantity,
+            reason=reason,
+            provider_id=owner_provider_id,
+        )
+        if isinstance(result, dict) and result.get("success"):
+            restored_any = True
+
+    if restored_any:
+        await db.db["orders"].update_one(
+            {"_id": order["_id"]},
+            {"$addToSet": {"inventory_restored_provider_ids": owner_provider_id}, "$set": {"updated_at": datetime.utcnow()}}
+        )
+    return restored_any
+
+
 @app.get("/api/provider/sales-history")
 async def provider_sales_history(
     day: Optional[int] = None,
@@ -1974,7 +2007,8 @@ async def provider_sales_history(
     current_user: str = Depends(get_current_user)
 ):
     """Provider: Get bill-style sales history filtered by day/month/year/category."""
-    await get_provider_access_context(current_user, "sales_history")
+    context = await get_provider_access_context(current_user, "sales_history")
+    owner_provider_id = context["owner_provider_id"]
     provider_scopes = await get_provider_scopes(current_user)
     products = await db.db["products"].find(
         {"provider_id": {"$in": provider_scopes}}
@@ -1994,6 +2028,11 @@ async def provider_sales_history(
     normalized_category = (category or "").strip().lower()
     bills = []
     for order in orders:
+        billing = order.get("billing") or {}
+        deleted_provider_ids = {str(item) for item in (billing.get("deleted_provider_ids") or [])}
+        if owner_provider_id in deleted_provider_ids:
+            continue
+
         bill_items = []
         for item in order.get("items", []):
             product_id = str(item.get("product_id", ""))
@@ -2094,6 +2133,87 @@ async def provider_sales_history(
         })
 
     return {"history": bills}
+
+
+@app.post("/api/provider/orders/{order_id}/actions")
+async def provider_apply_order_action(
+    order_id: str,
+    payload: ProviderOrderActionPayload,
+    current_user: str = Depends(get_current_user)
+):
+    context = await get_provider_access_context(current_user, "sales_history")
+    owner_provider_id = context["owner_provider_id"]
+    provider_scopes = await get_provider_scopes(current_user)
+    normalized_action = str(payload.action or "").strip().lower()
+    allowed_actions = {"delete", "cancel", "return_match", "return_product", "refund_money", "mark_paid"}
+    if normalized_action not in allowed_actions:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid provider order action")
+
+    order_object_id = parse_object_id(order_id, "order_id")
+    order = await db.db["orders"].find_one({
+        "_id": order_object_id,
+        "$or": [
+            {"provider_id": {"$in": provider_scopes}},
+            {"provider_ids": {"$in": provider_scopes}},
+        ]
+    })
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+
+    now = datetime.utcnow()
+    update_doc = {"$set": {"updated_at": now}, "$push": {
+        "billing.provider_action_history": {
+            "action": normalized_action,
+            "provider_id": owner_provider_id,
+            "actor_user_id": current_user,
+            "timestamp": now,
+        }
+    }}
+
+    inventory_restored = False
+    if normalized_action == "delete":
+        update_doc["$addToSet"] = {"billing.deleted_provider_ids": owner_provider_id}
+    elif normalized_action == "cancel":
+        inventory_restored = await restore_provider_order_inventory(order, provider_scopes, owner_provider_id, f"Provider cancel order {order_id}")
+        update_doc["$set"].update({
+            "status": OrderStatus.CANCELLED.value,
+            "fulfillment_status": "cancelled_by_provider",
+            f"provider_statuses.{owner_provider_id}": "cancelled",
+        })
+    elif normalized_action == "return_match":
+        inventory_restored = await restore_provider_order_inventory(order, provider_scopes, owner_provider_id, f"Provider return match {order_id}")
+        update_doc["$set"].update({
+            "fulfillment_status": "match_returned",
+            f"provider_statuses.{owner_provider_id}": "match_returned",
+        })
+    elif normalized_action == "return_product":
+        inventory_restored = await restore_provider_order_inventory(order, provider_scopes, owner_provider_id, f"Provider return product {order_id}")
+        update_doc["$set"].update({
+            "fulfillment_status": "product_returned",
+            f"provider_statuses.{owner_provider_id}": "product_returned",
+        })
+    elif normalized_action == "refund_money":
+        update_doc["$set"].update({
+            "payment_status": "refunded",
+            "refund_processed_at": now,
+            f"provider_statuses.{owner_provider_id}": "refunded",
+        })
+    elif normalized_action == "mark_paid":
+        update_doc["$set"].update({
+            "payment_status": PaymentStatus.PAID.value,
+            "status": OrderStatus.CONFIRMED.value,
+            "payment_date": order.get("payment_date") or now,
+            "fulfillment_status": "sent_to_provider",
+            f"provider_statuses.{owner_provider_id}": "sent_to_provider",
+        })
+
+    await db.db["orders"].update_one({"_id": order_object_id}, update_doc)
+    return {
+        "order_id": order_id,
+        "action": normalized_action,
+        "inventory_restored": inventory_restored,
+        "deleted": normalized_action == "delete",
+    }
 
 
 @app.put("/api/provider/orders/{order_id}/full-tax-invoice-status")

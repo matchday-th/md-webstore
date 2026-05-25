@@ -2781,14 +2781,69 @@
             }
         }
 
-        function handleSalesBillAction(action) {
-            const messages = {
-                cancel: '✅ เปลี่ยนปุ่มเป็น ยกเลิก (cancel) ตาม UI แล้ว',
-                delete: '✅ เปลี่ยนปุ่มเป็น ลบบิล (del) ตาม UI แล้ว',
-                proof: '✅ เปิดส่วนหลักฐานการชำระเงินจากชุดปุ่มล่างแล้ว',
-                tax: '✅ เปิดส่วนเอกสารทางภาษีจากชุดปุ่มล่างแล้ว'
+        async function handleSalesBillAction(action) {
+            if (!currentSalesBill) return;
+
+            if (action === 'proof') {
+                document.getElementById('salesBillProofSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+            if (action === 'tax') {
+                document.getElementById('salesBillTaxSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
+            const confirmations = {
+                delete: 'ลบบิลนี้ออกจากรายการของร้านใช่ไหม? บิลจะถูกซ่อนออกจากรายการ',
+                cancel: 'ยืนยันการยกเลิกบิลนี้?',
+                return_match: 'ยืนยันการคืนแมทช์รายการนี้?',
+                return_product: 'ยืนยันการคืนสินค้าและคืนสต็อก?',
+                refund_money: 'ยืนยันการคืนเงินรายการนี้?',
+                mark_paid: 'ยืนยันการเปลี่ยนสถานะเป็นชำระเงินแล้ว?'
             };
-            showMessage(messages[action] || '✅ อัปเดตปุ่มคำสั่งแล้ว', 'success');
+            if (confirmations[action] && !confirm(confirmations[action])) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/provider/orders/${currentSalesBill.order_id}/actions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ action })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to process bill action');
+                }
+
+                const result = await response.json();
+                const actionMessages = {
+                    delete: '✅ ลบบิลออกจากรายการแล้ว',
+                    cancel: result.inventory_restored ? '✅ ยกเลิกบิลและคืนสต็อกแล้ว' : '✅ ยกเลิกบิลแล้ว',
+                    return_match: result.inventory_restored ? '✅ คืนแมทช์และคืนสต็อกแล้ว' : '✅ คืนแมทช์แล้ว',
+                    return_product: result.inventory_restored ? '✅ คืนสินค้าและคืนสต็อกแล้ว' : '✅ คืนสินค้าแล้ว',
+                    refund_money: '✅ คืนเงินเรียบร้อยแล้ว',
+                    mark_paid: '✅ เปลี่ยนสถานะเป็นชำระเงินแล้ว'
+                };
+                showMessage(actionMessages[action] || '✅ อัปเดตรายการแล้ว', 'success');
+
+                const reopenedOrderId = result.deleted ? null : currentSalesBill.order_id;
+                await loadSalesHistory();
+                await loadDashboard();
+                await loadProductsForRestock();
+                await loadMyProducts();
+
+                if (reopenedOrderId) {
+                    openSalesBill(reopenedOrderId);
+                } else {
+                    closeSalesBillModal();
+                }
+            } catch (error) {
+                showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
+            }
         }
 
         function openSalesBill(orderId) {
@@ -2864,10 +2919,10 @@
                     <div class="mt-auto flex flex-wrap items-center gap-3 pt-2">
                         <button type="button" class="rounded-xl bg-red-50 px-5 py-4 text-sm font-semibold text-red-700 transition hover:bg-red-100" onclick="handleSalesBillAction('delete')">🔒 ลบบิล (del)</button>
                         <button type="button" class="rounded-xl bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-700 transition hover:bg-amber-100" onclick="handleSalesBillAction('cancel')">↩ ยกเลิก (cancel)</button>
-                        <button type="button" class="rounded-xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100" onclick="handleSalesBillAction('cancel')">⊗ คืนแมทช์</button>
-                        <button type="button" class="rounded-xl bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-700 transition hover:bg-orange-100" onclick="handleSalesBillAction('cancel')">📦 คืนสินค้า</button>
-                        <button type="button" class="rounded-xl bg-cyan-50 px-5 py-4 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100" onclick="handleSalesBillAction('cancel')">💸 คืนเงิน</button>
-                        <button type="button" class="rounded-xl bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-300">ชำระเงิน</button>
+                        <button type="button" class="rounded-xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100" onclick="handleSalesBillAction('return_match')">⊗ คืนแมทช์</button>
+                        <button type="button" class="rounded-xl bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-700 transition hover:bg-orange-100" onclick="handleSalesBillAction('return_product')">📦 คืนสินค้า</button>
+                        <button type="button" class="rounded-xl bg-cyan-50 px-5 py-4 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100" onclick="handleSalesBillAction('refund_money')">💸 คืนเงิน</button>
+                        <button type="button" class="rounded-xl bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100" onclick="handleSalesBillAction('mark_paid')">ชำระเงิน</button>
                     </div>
                 </div>
             `;
@@ -2933,11 +2988,11 @@
                             <button type="button" class="text-sm font-semibold text-red-500">💾 บันทึก</button>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-2">
+                    <div id="salesBillProofSection" class="flex flex-wrap gap-2">
                         <button type="button" class="rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-600" onclick="handleSalesBillAction('proof')">📄 หลักฐานการชำระเงิน</button>
                         <button type="button" class="rounded-lg bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600" onclick="handleSalesBillAction('tax')">🧾 เอกสารทางภาษี</button>
                     </div>
-                    <div class="rounded-[24px] bg-white p-5 shadow-sm">
+                    <div id="salesBillTaxSection" class="rounded-[24px] bg-white p-5 shadow-sm">
                         <div class="mb-4 flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-black">เอกสารทางภาษี</h3>
                             <span class="text-xs uppercase tracking-[0.18em] text-neutral-400">export</span>

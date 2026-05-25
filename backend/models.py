@@ -182,6 +182,9 @@ class ProviderStaffUpdatePayload(BaseModel):
 class ProviderFullTaxInvoiceStatusPayload(BaseModel):
     status: str
 
+class ProviderOrderActionPayload(BaseModel):
+    action: str
+
 # ===================== TRANSACTION LOG (Duplicate Purchase Prevention) =====================
 class TransactionLog(BaseModel):
     id: str = Field(alias="_id")
