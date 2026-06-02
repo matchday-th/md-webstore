@@ -165,6 +165,147 @@
             gap: 12px;
         }
 
+        .section-shell {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82));
+            border: 1px solid rgba(17, 17, 17, 0.08);
+            box-shadow: 0 18px 45px rgba(15, 15, 15, 0.06);
+        }
+
+        .section-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.7), transparent 24%);
+            pointer-events: none;
+        }
+
+        .section-shell > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-header {
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .section-kicker {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: #8b8b8b;
+        }
+
+        .section-title {
+            margin-top: 6px;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: #111111;
+        }
+
+        .section-copy {
+            margin-top: 8px;
+            max-width: 36rem;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #737373;
+        }
+
+        .section-actions {
+            display: grid;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .section-actions.compact-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .section-actions.compact-3 {
+            grid-template-columns: repeat(3, minmax(0, auto));
+        }
+
+        .section-filter-card {
+            border: 1px solid rgba(17, 17, 17, 0.08);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 250, 250, 0.88));
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96), 0 12px 28px rgba(15, 15, 15, 0.05);
+            backdrop-filter: blur(8px);
+        }
+
+        .section-filter-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .section-filter-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 9999px;
+            background: #111111;
+            color: #ffffff;
+            padding: 7px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .section-filter-note {
+            font-size: 12px;
+            line-height: 1.4;
+            color: #8b8b8b;
+            text-align: right;
+        }
+
+        .section-filter-label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #8b8b8b;
+            margin-bottom: 8px;
+        }
+
+        .section-filter-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .section-filter-grid.compact {
+            gap: 12px;
+        }
+
+        .section-filter-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .section-filter-grid.two {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .section-filter-grid.four {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
         .sales-bill-modal-content {
             max-width: 1320px;
             padding: 0;
@@ -275,25 +416,31 @@
         </div>
 
         <div id="dashboard" class="tab-content active">
-            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
-                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div class="rounded-[32px] section-shell p-6 sm:p-8">
+                <div class="section-header flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Overview</p>
-                        <h2 id="dashboardTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">📊 Dashboard</h2>
-                        <p id="dashboardSubtitle" class="mt-2 max-w-md text-sm text-neutral-500">Track your catalog, category coverage, revenue, and order volume from one overview.</p>
+                        <p class="section-kicker">Overview</p>
+                        <h2 id="dashboardTitle" class="section-title">📊 Dashboard</h2>
+                        <p id="dashboardSubtitle" class="section-copy">Track your catalog, category coverage, revenue, and order volume from one overview.</p>
                     </div>
-                    <div class="flex flex-wrap items-end gap-3">
-                        <div>
-                            <label id="dashboardMonthLabel">Month</label>
-                            <select id="dashboardMonthFilter"></select>
+                    <div class="section-filter-card min-w-0 xl:min-w-[760px]">
+                        <div class="section-filter-head">
+                            <span class="section-filter-tag">Period</span>
+                            <div class="section-filter-note">Month and year refine the summary.</div>
                         </div>
-                        <div>
-                            <label id="dashboardYearLabel">Year</label>
-                            <select id="dashboardYearFilter"></select>
-                        </div>
-                        <div class="flex flex-wrap gap-3 pb-0.5">
-                            <button type="button" class="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" onclick="loadDashboard()" id="dashboardApplyButton">Load Dashboard</button>
-                            <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="resetDashboardFilters()" id="dashboardAllButton">View All</button>
+                        <div class="section-filter-grid two lg:grid-cols-[180px_180px_auto] lg:items-end">
+                            <div>
+                                <label id="dashboardMonthLabel">Month</label>
+                                <select id="dashboardMonthFilter"></select>
+                            </div>
+                            <div>
+                                <label id="dashboardYearLabel">Year</label>
+                                <select id="dashboardYearFilter"></select>
+                            </div>
+                            <div class="section-filter-actions lg:justify-end">
+                                <button type="button" class="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" onclick="loadDashboard()" id="dashboardApplyButton">Load Dashboard</button>
+                                <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="resetDashboardFilters()" id="dashboardAllButton">View All</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -324,25 +471,31 @@
         </div>
 
         <div id="inventory-hub" class="tab-content">
-            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
-                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div class="rounded-[32px] section-shell p-6 sm:p-8">
+                <div class="section-header flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Inventory Table</p>
-                        <h2 id="myProductsTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">📋 My Products</h2>
-                        <p class="mt-2 max-w-md text-sm text-neutral-500">Review, edit, and prune everything in your active product list from one minimal control surface.</p>
+                        <p class="section-kicker">Inventory Table</p>
+                        <h2 id="myProductsTitle" class="section-title">📋 My Products</h2>
+                        <p class="section-copy">Review, edit, and prune everything in your active product list from one minimal control surface.</p>
                     </div>
-                    <div class="grid gap-4 md:grid-cols-2 md:min-w-[520px] lg:min-w-[640px]">
-                        <div>
-                            <label id="filterCategoryLabel">Filter by Category</label>
-                            <select id="categoryFilter" onchange="loadMyProducts()">
-                                <option value="">All Categories</option>
-                            </select>
+                    <div class="section-filter-card min-w-0 xl:min-w-[640px]">
+                        <div class="section-filter-head">
+                            <span class="section-filter-tag">Filters</span>
+                            <div class="section-filter-note">Refine by shop and category.</div>
                         </div>
-                        <div>
-                            <label id="filterShopLabel">Filter by Shop</label>
-                            <select id="shopFilter" onchange="loadMyProducts()">
-                                <option value="">All Shops</option>
-                            </select>
+                        <div class="section-filter-grid two compact">
+                            <div>
+                                <label id="filterCategoryLabel">Filter by Category</label>
+                                <select id="categoryFilter" onchange="loadMyProducts()">
+                                    <option value="">All Categories</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label id="filterShopLabel">Filter by Shop</label>
+                                <select id="shopFilter" onchange="loadMyProducts()">
+                                    <option value="">All Shops</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -353,33 +506,39 @@
         </div>
 
         <div id="sales-history" class="tab-content">
-            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
-                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div class="rounded-[32px] section-shell p-6 sm:p-8">
+                <div class="section-header flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Sales Ledger</p>
-                        <h2 id="salesHistoryTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">🧾 Sales History</h2>
-                        <p class="mt-2 max-w-md text-sm text-neutral-500">Review sold items by exact day or summarize by month and year.</p>
+                        <p class="section-kicker">Sales Ledger</p>
+                        <h2 id="salesHistoryTitle" class="section-title">🧾 Sales History</h2>
+                        <p class="section-copy">Review sold items by exact day or summarize by month and year.</p>
                     </div>
-                    <div class="grid gap-4 lg:grid-cols-4 lg:min-w-[760px]">
-                        <div>
-                            <label id="salesDateLabel">Select Day</label>
-                            <input type="date" id="salesDayFilter">
+                    <div class="section-filter-card min-w-0 xl:min-w-[760px]">
+                        <div class="section-filter-head">
+                            <span class="section-filter-tag">Filters</span>
+                            <div class="section-filter-note">Pick a day, month, year, or category.</div>
                         </div>
-                        <div>
-                            <label id="salesMonthLabel">Month</label>
-                            <select id="salesMonthFilter"></select>
-                        </div>
-                        <div>
-                            <label id="salesYearLabel">Year</label>
-                            <select id="salesYearFilter"></select>
-                        </div>
-                        <div>
-                            <label id="salesCategoryLabel">Category</label>
-                            <select id="salesCategoryFilter"></select>
+                        <div class="section-filter-grid four lg:grid-cols-4 compact">
+                            <div>
+                                <label id="salesDateLabel">Select Day</label>
+                                <input type="date" id="salesDayFilter">
+                            </div>
+                            <div>
+                                <label id="salesMonthLabel">Month</label>
+                                <select id="salesMonthFilter"></select>
+                            </div>
+                            <div>
+                                <label id="salesYearLabel">Year</label>
+                                <select id="salesYearFilter"></select>
+                            </div>
+                            <div>
+                                <label id="salesCategoryLabel">Category</label>
+                                <select id="salesCategoryFilter"></select>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="mb-6 flex flex-wrap gap-3">
+                <div class="mb-6 section-filter-actions">
                     <button type="button" class="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800" onclick="loadSalesHistory()" id="loadSalesButton">Load Sales</button>
                     <button type="button" class="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="resetHistoryFilters('sales')" id="resetSalesButton">Reset Filters</button>
                     <button type="button" class="rounded-full border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100" onclick="exportSalesHistoryToExcel()" id="exportSalesButton">Export Excel</button>
@@ -391,29 +550,35 @@
         </div>
 
         <div id="restock-history" class="tab-content">
-            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
-                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div class="rounded-[32px] section-shell p-6 sm:p-8">
+                <div class="section-header flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Inventory Audit</p>
-                        <h2 id="restockHistoryTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">📥 Restock History</h2>
-                        <p class="mt-2 max-w-md text-sm text-neutral-500">Track every stock refill with quantity, stock delta, and reason.</p>
+                        <p class="section-kicker">Inventory Audit</p>
+                        <h2 id="restockHistoryTitle" class="section-title">📥 Restock History</h2>
+                        <p class="section-copy">Track every stock refill with quantity, stock delta, and reason.</p>
                     </div>
-                    <div class="grid gap-4 lg:grid-cols-4 lg:min-w-[760px]">
-                        <div>
-                            <label id="restockDateLabel">Select Day</label>
-                            <input type="date" id="restockDayFilter">
+                    <div class="section-filter-card min-w-0 xl:min-w-[760px]">
+                        <div class="section-filter-head">
+                            <span class="section-filter-tag">Filters</span>
+                            <div class="section-filter-note">Pick a day, month, year, or category.</div>
                         </div>
-                        <div>
-                            <label id="restockMonthLabel">Month</label>
-                            <select id="restockMonthFilter"></select>
-                        </div>
-                        <div>
-                            <label id="restockYearLabel">Year</label>
-                            <select id="restockYearFilter"></select>
-                        </div>
-                        <div>
-                            <label id="restockCategoryLabel">Category</label>
-                            <select id="restockCategoryFilter"></select>
+                        <div class="section-filter-grid four lg:grid-cols-4 compact">
+                            <div>
+                                <label id="restockDateLabel">Select Day</label>
+                                <input type="date" id="restockDayFilter">
+                            </div>
+                            <div>
+                                <label id="restockMonthLabel">Month</label>
+                                <select id="restockMonthFilter"></select>
+                            </div>
+                            <div>
+                                <label id="restockYearLabel">Year</label>
+                                <select id="restockYearFilter"></select>
+                            </div>
+                            <div>
+                                <label id="restockCategoryLabel">Category</label>
+                                <select id="restockCategoryFilter"></select>
+                            </div>
                         </div>
                     </div>
                 </div>
