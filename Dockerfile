@@ -3,6 +3,7 @@ FROM node:20-slim AS frontend-builder
 WORKDIR /frontend
 
 COPY frontend-vue/package*.json ./
+COPY frontend-vue/scripts ./scripts/
 RUN npm ci
 
 COPY frontend-vue/ ./
