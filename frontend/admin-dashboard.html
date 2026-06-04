@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - E-Commerce</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -290,6 +291,285 @@
             line-height: 1.6;
         }
 
+        .admin-hero {
+            background: linear-gradient(135deg, #111827 0%, #0f172a 48%, #111111 100%);
+            color: #fff;
+            border-radius: 28px;
+            padding: 28px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+            margin-bottom: 24px;
+        }
+
+        .admin-hero-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .admin-hero-copy h1 {
+            font-size: clamp(28px, 4vw, 44px);
+            line-height: 1.05;
+            margin-bottom: 10px;
+        }
+
+        .admin-hero-copy p {
+            color: rgba(255, 255, 255, 0.74);
+            max-width: 42rem;
+        }
+
+        .admin-filter-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 24px;
+            padding: 18px;
+            backdrop-filter: blur(10px);
+        }
+
+        .admin-filter-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .admin-filter-grid.top {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .admin-filter-grid.bottom {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .admin-filter-grid .field label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .admin-filter-grid .field input,
+        .admin-filter-grid .field select {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+
+        .admin-filter-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 14px;
+        }
+
+        .admin-button {
+            border: none;
+            border-radius: 9999px;
+            padding: 12px 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .admin-button:hover {
+            transform: translateY(-1px);
+            opacity: 0.96;
+        }
+
+        .admin-button.primary {
+            background: #ffffff;
+            color: #111827;
+        }
+
+        .admin-button.dark {
+            background: #111111;
+            color: #ffffff;
+        }
+
+        .admin-button.ghost {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .admin-dashboard-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+
+        .admin-dashboard-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 22px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+        }
+
+        .admin-dashboard-card h3 {
+            color: #6b7280;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            margin-bottom: 12px;
+        }
+
+        .admin-dashboard-card .value {
+            font-size: 30px;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .admin-shell {
+            background: #ffffff;
+            border-radius: 28px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .admin-section-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: end;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .admin-section-head h2 {
+            font-size: 24px;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+
+        .admin-section-head p {
+            color: #6b7280;
+            max-width: 42rem;
+            line-height: 1.6;
+        }
+
+        .admin-table-wrap {
+            overflow: hidden;
+            border-radius: 24px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+        }
+
+        .admin-table-wrap .empty-state {
+            padding: 24px;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .admin-table-wrap table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-table-wrap thead {
+            background: #f9fafb;
+        }
+
+        .admin-table-wrap th,
+        .admin-table-wrap td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: top;
+        }
+
+        .admin-table-wrap th {
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #6b7280;
+        }
+
+        .admin-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 9999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .admin-pill.paid {
+            background: #ecfdf5;
+            color: #15803d;
+        }
+
+        .admin-pill.pending {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .admin-pill.revenue {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .bill-view-button {
+            border: none;
+            background: #111111;
+            color: #ffffff;
+            border-radius: 9999px;
+            padding: 10px 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .bill-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .bill-modal.show {
+            display: flex;
+        }
+
+        .bill-modal-panel {
+            width: 100%;
+            max-width: 1180px;
+            max-height: 92vh;
+            overflow: auto;
+            border-radius: 28px;
+            background: #ffffff;
+            box-shadow: 0 30px 90px rgba(15, 23, 42, 0.25);
+        }
+
+        @media (min-width: 1024px) {
+            .admin-hero-grid {
+                grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+            }
+            .admin-dashboard-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 1023px) {
+            .admin-filter-grid.top,
+            .admin-filter-grid.bottom {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+        }
+
         @media (max-width: 900px) {
             .shop-layout {
                 grid-template-columns: 1fr;
@@ -336,7 +616,49 @@
                 <div class="value" id="totalOrders">-</div>
             </div>
         </div>
-        
+
+        <div class="admin-shell">
+            <div class="admin-hero-grid">
+                <div class="admin-hero-copy">
+                    <div style="font-size:11px; letter-spacing:0.22em; text-transform:uppercase; color:rgba(255,255,255,0.65); font-weight:700; margin-bottom:10px;">Provider Overview</div>
+                    <h1 id="overviewTitle">📊 Dashboard ภาพรวม</h1>
+                    <p id="overviewSubtitle">ดูภาพรวมการขายแบบแยก provider พร้อมกรองตามวัน เดือน และปีได้ในหน้าเดียว</p>
+                </div>
+                <div class="admin-filter-card">
+                    <div class="admin-filter-grid top">
+                        <div class="field">
+                            <label id="providerFilterLabel">Provider</label>
+                            <select id="adminProviderFilter"></select>
+                        </div>
+                        <div class="field">
+                            <label id="dayFilterLabel">Day</label>
+                            <input type="date" id="adminOrderDayFilter">
+                        </div>
+                    </div>
+                    <div class="admin-filter-grid bottom" style="margin-top:12px;">
+                        <div class="field">
+                            <label id="monthFilterLabel">Month</label>
+                            <select id="adminOrderMonthFilter"></select>
+                        </div>
+                        <div class="field">
+                            <label id="yearFilterLabel">Year</label>
+                            <select id="adminOrderYearFilter"></select>
+                        </div>
+                        <div class="field" style="display:flex; align-items:end;">
+                            <button type="button" class="admin-button primary" onclick="applyAdminOrderFilters()" id="applyDashboardFiltersButton" style="width:100%;">Load Dashboard</button>
+                        </div>
+                        <div class="field" style="display:flex; align-items:end;">
+                            <button type="button" class="admin-button ghost" onclick="resetAdminOrderFilters()" id="resetDashboardFiltersButton" style="width:100%;">View All</button>
+                        </div>
+                    </div>
+                    <div class="admin-filter-actions">
+                        <button type="button" class="admin-button dark" onclick="exportAdminOrdersToExcel()" id="exportOrdersButton">Export Excel</button>
+                    </div>
+                </div>
+            </div>
+            <div id="adminDashboardCards" class="admin-dashboard-grid" style="margin-top:18px;"></div>
+        </div>
+
         <div class="section">
             <h2 id="inventoryAlertsTitle">🚨 Inventory Alerts</h2>
             <div id="inventory-alerts" class="loading">Loading...</div>
@@ -389,6 +711,9 @@
         const port = hostname === 'localhost' || hostname === '127.0.0.1' ? ':8000' : '';
         const API_BASE = `${protocol}//${hostname}${port}`;
         let token = localStorage.getItem("auth_token");
+        let adminOrders = [];
+        let adminProviders = [];
+        let currentAdminOrder = null;
         const translations = {
             en: {
                 title: "Admin Dashboard - E-Commerce",
@@ -407,7 +732,16 @@
                 shopNameLabel: "Shop Name",
                 shopEmailLabel: "Shop Email",
                 createShopButton: "Create Shop",
-                allOrdersTitle: "📦 All Orders",
+                allOrdersTitle: "🧾 Sales History",
+                overviewTitle: "📊 Dashboard Overview",
+                overviewSubtitle: "View order performance by provider, day, month, and year.",
+                providerFilterLabel: "Provider",
+                dayFilterLabel: "Day",
+                monthFilterLabel: "Month",
+                yearFilterLabel: "Year",
+                applyDashboardFiltersButton: "Load Dashboard",
+                resetDashboardFiltersButton: "View All",
+                exportOrdersButton: "Export Excel",
                 loading: "Loading...",
                 unauthorized: "⚠️ Please login as admin first",
                 sku: "SKU",
@@ -446,7 +780,16 @@
                 shopNameLabel: "ชื่อร้าน",
                 shopEmailLabel: "อีเมลร้านค้า",
                 createShopButton: "สร้างร้านค้า",
-                allOrdersTitle: "📦 ออเดอร์ทั้งหมด",
+                allOrdersTitle: "🧾 ประวัติการขาย",
+                overviewTitle: "📊 Dashboard ภาพรวม",
+                overviewSubtitle: "ดูภาพรวมการขายแยก provider ตามวัน เดือน และปีได้",
+                providerFilterLabel: "Provider",
+                dayFilterLabel: "วัน",
+                monthFilterLabel: "เดือน",
+                yearFilterLabel: "ปี",
+                applyDashboardFiltersButton: "โหลดแดชบอร์ด",
+                resetDashboardFiltersButton: "ดูทั้งหมด",
+                exportOrdersButton: "Export Excel",
                 loading: "กำลังโหลด...",
                 unauthorized: "⚠️ กรุณาเข้าสู่ระบบในฐานะผู้ดูแลก่อน",
                 sku: "SKU",
@@ -485,7 +828,7 @@
         
         function applyTranslations() {
             document.title = t("title");
-            ["pageTitle","pageSubtitle","logoutButton","totalProductsLabel","totalStockLabel","revenueLabel","ordersLabel","inventoryAlertsTitle","skuSummaryTitle","slipReviewTitle","shopManagementTitle","ownerProviderLabel","shopNameLabel","shopEmailLabel","createShopButton","allOrdersTitle"].forEach((id) => {
+            ["pageTitle","pageSubtitle","logoutButton","totalProductsLabel","totalStockLabel","revenueLabel","ordersLabel","inventoryAlertsTitle","skuSummaryTitle","slipReviewTitle","shopManagementTitle","ownerProviderLabel","shopNameLabel","shopEmailLabel","createShopButton","allOrdersTitle","overviewTitle","overviewSubtitle","providerFilterLabel","dayFilterLabel","monthFilterLabel","yearFilterLabel","applyDashboardFiltersButton","resetDashboardFiltersButton","exportOrdersButton"].forEach((id) => {
                 const element = document.getElementById(id);
                 if (element) {
                     element.textContent = t(id);
@@ -495,7 +838,368 @@
                 element.textContent = t("loading");
             });
         }
-        
+
+        function padDatePart(value) {
+            return String(value).padStart(2, '0');
+        }
+
+        function getAdminMonthOptions() {
+            return [
+                { value: '', label: window.EcomI18n.getLanguage() === 'th' ? 'ทุกเดือน' : 'All Months' },
+                { value: '1', label: window.EcomI18n.getLanguage() === 'th' ? 'มกราคม' : 'January' },
+                { value: '2', label: window.EcomI18n.getLanguage() === 'th' ? 'กุมภาพันธ์' : 'February' },
+                { value: '3', label: window.EcomI18n.getLanguage() === 'th' ? 'มีนาคม' : 'March' },
+                { value: '4', label: window.EcomI18n.getLanguage() === 'th' ? 'เมษายน' : 'April' },
+                { value: '5', label: window.EcomI18n.getLanguage() === 'th' ? 'พฤษภาคม' : 'May' },
+                { value: '6', label: window.EcomI18n.getLanguage() === 'th' ? 'มิถุนายน' : 'June' },
+                { value: '7', label: window.EcomI18n.getLanguage() === 'th' ? 'กรกฎาคม' : 'July' },
+                { value: '8', label: window.EcomI18n.getLanguage() === 'th' ? 'สิงหาคม' : 'August' },
+                { value: '9', label: window.EcomI18n.getLanguage() === 'th' ? 'กันยายน' : 'September' },
+                { value: '10', label: window.EcomI18n.getLanguage() === 'th' ? 'ตุลาคม' : 'October' },
+                { value: '11', label: window.EcomI18n.getLanguage() === 'th' ? 'พฤศจิกายน' : 'November' },
+                { value: '12', label: window.EcomI18n.getLanguage() === 'th' ? 'ธันวาคม' : 'December' },
+            ];
+        }
+
+        function populateAdminMonthOptions() {
+            const select = document.getElementById('adminOrderMonthFilter');
+            if (!select) return;
+            const current = select.value;
+            select.innerHTML = getAdminMonthOptions().map((option) => `<option value="${option.value}">${option.label}</option>`).join('');
+            if (current) select.value = current;
+        }
+
+        function populateAdminYearOptions() {
+            const select = document.getElementById('adminOrderYearFilter');
+            if (!select) return;
+            const current = select.value;
+            const currentYear = new Date().getFullYear();
+            const years = [{ value: '', label: window.EcomI18n.getLanguage() === 'th' ? 'ทุกปี' : 'All Years' }];
+            for (let year = currentYear + 1; year >= currentYear - 4; year -= 1) {
+                years.push({ value: String(year), label: String(year) });
+            }
+            select.innerHTML = years.map((year) => `<option value="${year.value}">${year.label}</option>`).join('');
+            if (current) select.value = current;
+        }
+
+        function normalizeProviderFilterLabel(providerId) {
+            if (!providerId) return window.EcomI18n.getLanguage() === 'th' ? 'แสดงทั้งหมด' : 'All Providers';
+            const provider = adminProviders.find((item) => item.provider_id === providerId);
+            return provider ? provider.provider_name : providerId;
+        }
+
+        function populateAdminProviderFilter() {
+            const select = document.getElementById('adminProviderFilter');
+            if (!select) return;
+            const current = select.value;
+            const options = [
+                `<option value="">${window.EcomI18n.getLanguage() === 'th' ? 'แสดงทั้งหมด' : 'All Providers'}</option>`,
+                ...adminProviders.map((provider) => `<option value="${provider.provider_id}">${provider.provider_name}</option>`),
+            ];
+            select.innerHTML = options.join('');
+            if (current) select.value = current;
+        }
+
+        function getAdminFilteredOrders() {
+            const providerFilter = document.getElementById('adminProviderFilter')?.value || '';
+            const dayFilter = document.getElementById('adminOrderDayFilter')?.value || '';
+            const monthFilter = document.getElementById('adminOrderMonthFilter')?.value || '';
+            const yearFilter = document.getElementById('adminOrderYearFilter')?.value || '';
+            return adminOrders.filter((order) => {
+                const createdAt = order.created_at ? new Date(order.created_at) : null;
+                if (!createdAt || Number.isNaN(createdAt.getTime())) return false;
+                const orderProviders = (order.provider_ids || []).map((value) => String(value));
+                if (providerFilter && !orderProviders.includes(providerFilter)) return false;
+                if (dayFilter) {
+                    const day = new Date(dayFilter);
+                    if (Number.isNaN(day.getTime())) return false;
+                    return (
+                        createdAt.getFullYear() === day.getFullYear() &&
+                        createdAt.getMonth() === day.getMonth() &&
+                        createdAt.getDate() === day.getDate()
+                    );
+                }
+                if (monthFilter && createdAt.getMonth() + 1 !== Number(monthFilter)) return false;
+                if (yearFilter && createdAt.getFullYear() !== Number(yearFilter)) return false;
+                return true;
+            });
+        }
+
+        function formatAdminDateTime(value) {
+            if (!value) return '-';
+            return new Date(value).toLocaleString(window.EcomI18n.getLanguage() === 'th' ? 'th-TH' : 'en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getPaymentMethodLabel(value) {
+            const normalized = String(value || '').toLowerCase();
+            if (normalized === 'qrcode' || normalized === 'qr_code' || normalized === 'qr transfer') return 'QR Code';
+            if (normalized === 'credit card' || normalized === 'credit_card') return window.EcomI18n.getLanguage() === 'th' ? 'บัตรเครดิต' : 'Credit Card';
+            if (normalized === 'cash') return window.EcomI18n.getLanguage() === 'th' ? 'เงินสด' : 'Cash';
+            return value || '-';
+        }
+
+        function getStatusBadgeClass(status) {
+            const normalized = String(status || '').toLowerCase();
+            if (normalized.includes('paid') || normalized.includes('completed')) return 'admin-pill paid';
+            if (normalized.includes('pending') || normalized.includes('await')) return 'admin-pill pending';
+            return 'admin-pill';
+        }
+
+        function renderAdminOverviewCards(orders) {
+            const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+            const totalOrders = orders.length;
+            const avgOrder = totalOrders ? totalRevenue / totalOrders : 0;
+            const providerCount = new Set(orders.flatMap((order) => (order.provider_ids || []).map((value) => String(value)))).size;
+            const paidCount = orders.filter((order) => String(order.payment_status || '').toLowerCase() === 'paid').length;
+            const pendingCount = orders.filter((order) => String(order.payment_status || '').includes('pending')).length;
+
+            const cards = [
+                { label: 'Orders', value: totalOrders, note: 'Bills in the current filter' },
+                { label: 'Revenue', value: `$${totalRevenue.toFixed(2)}`, note: 'Total filtered revenue' },
+                { label: 'Avg Bill', value: `$${avgOrder.toFixed(2)}`, note: 'Average order value' },
+                { label: 'Providers', value: providerCount, note: 'Unique providers in view' },
+                { label: 'Paid', value: paidCount, note: 'Completed payments' },
+                { label: 'Pending', value: pendingCount, note: 'Waiting slips' },
+            ];
+
+            const container = document.getElementById('adminDashboardCards');
+            if (!container) return;
+            container.innerHTML = cards.map((card) => `
+                <div class="admin-dashboard-card">
+                    <h3>${card.label}</h3>
+                    <div class="value">${card.value}</div>
+                    <p style="margin-top:10px; color:#6b7280; font-size:14px;">${card.note}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminOrdersTable(orders) {
+            const container = document.getElementById('all-orders-list');
+            if (!container) return;
+            if (!orders.length) {
+                container.innerHTML = `<div class="empty-state">${window.EcomI18n.getLanguage() === 'th' ? 'ไม่พบออเดอร์ตามตัวกรองนี้' : 'No orders found for this filter.'}</div>`;
+                return;
+            }
+            container.innerHTML = `
+                <div class="admin-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Invoice</th>
+                                <th>Customer</th>
+                                <th>Payment</th>
+                                <th>Method</th>
+                                <th>Total</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${orders.map((order, index) => `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${formatAdminDateTime(order.created_at)}</td>
+                                    <td>
+                                        <div style="font-weight:800; color:#111827;">${order.invoice_number || '-'}</div>
+                                        <div style="font-size:12px; color:#9ca3af;">${order.order_id || ''}</div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight:700; color:#111827;">${order.customer_name || '-'}</div>
+                                        <div style="font-size:12px; color:#6b7280;">${order.customer_email || ''}</div>
+                                    </td>
+                                    <td><span class="${getStatusBadgeClass(order.payment_status)}">${prettyStatus(order.payment_status)}</span></td>
+                                    <td>${getPaymentMethodLabel(order.payment_method)}</td>
+                                    <td><strong>$${Number(order.total_amount || 0).toFixed(2)}</strong></td>
+                                    <td><button type="button" class="bill-view-button" onclick="openAdminBill('${order.order_id}')">${window.EcomI18n.getLanguage() === 'th' ? 'ดูบิล' : 'View Bill'}</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function applyAdminOrderFilters() {
+            const filtered = getAdminFilteredOrders();
+            renderAdminOverviewCards(filtered);
+            renderAdminOrdersTable(filtered);
+        }
+
+        function resetAdminOrderFilters() {
+            const day = document.getElementById('adminOrderDayFilter');
+            const month = document.getElementById('adminOrderMonthFilter');
+            const year = document.getElementById('adminOrderYearFilter');
+            const provider = document.getElementById('adminProviderFilter');
+            if (day) day.value = '';
+            if (month) month.value = '';
+            if (year) year.value = '';
+            if (provider) provider.value = '';
+            applyAdminOrderFilters();
+        }
+
+        function exportAdminOrdersToExcel() {
+            const orders = getAdminFilteredOrders();
+            if (!orders.length) {
+                showMessage(window.EcomI18n.getLanguage() === 'th' ? '❌ ไม่มีข้อมูลออเดอร์สำหรับ export' : '❌ No orders to export', 'error');
+                return;
+            }
+            const rows = orders.map((order, index) => ({
+                '#': index + 1,
+                Date: formatAdminDateTime(order.created_at),
+                Invoice: order.invoice_number || '-',
+                Customer: [order.customer_name || '-', order.customer_email || ''].filter(Boolean).join('\n'),
+                Payment: prettyStatus(order.payment_status),
+                Method: getPaymentMethodLabel(order.payment_method),
+                Total: Number(order.total_amount || 0),
+                Providers: (order.provider_names || []).join(', ') || '-',
+            }));
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            worksheet['!cols'] = [
+                { wch: 6 },
+                { wch: 24 },
+                { wch: 20 },
+                { wch: 28 },
+                { wch: 16 },
+                { wch: 16 },
+                { wch: 14 },
+                { wch: 30 },
+            ];
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales History');
+            const today = new Date();
+            const fileDate = `${today.getFullYear()}-${padDatePart(today.getMonth() + 1)}-${padDatePart(today.getDate())}`;
+            XLSX.writeFile(workbook, `admin-sales-history-${fileDate}.xlsx`);
+        }
+
+        function openAdminBill(orderId) {
+            currentAdminOrder = adminOrders.find((order) => order.order_id === orderId) || null;
+            if (!currentAdminOrder) return;
+            const modal = document.getElementById('adminBillModal');
+            const body = document.getElementById('adminBillModalBody');
+            if (!modal || !body) return;
+            body.innerHTML = `
+                <div style="padding:24px; display:grid; gap:18px; grid-template-columns:minmax(0,1.2fr) minmax(320px,0.8fr);">
+                    <div>
+                        <div style="margin-bottom:18px;">
+                            <div style="font-size:12px; color:#9ca3af; letter-spacing:0.18em; text-transform:uppercase; font-weight:700;">Bill Detail</div>
+                            <h3 style="font-size:28px; margin-top:8px; color:#111827;">${currentAdminOrder.invoice_number || '-'}</h3>
+                            <div style="color:#6b7280; margin-top:6px;">${formatAdminDateTime(currentAdminOrder.created_at)}</div>
+                        </div>
+                        <div class="admin-table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${(currentAdminOrder.items || []).map((item) => `
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight:700; color:#111827;">${item.name || '-'}</div>
+                                                <div style="font-size:12px; color:#6b7280;">${item.provider_name || '-'}</div>
+                                            </td>
+                                            <td>${item.quantity || 0}</td>
+                                            <td>$${Number(item.price_at_purchase || 0).toFixed(2)}</td>
+                                            <td>$${Number(item.line_total || 0).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div style="display:grid; gap:14px; align-content:start;">
+                        <div class="admin-dashboard-card">
+                            <h3>${window.EcomI18n.getLanguage() === 'th' ? 'ลูกค้า' : 'Customer'}</h3>
+                            <div class="value" style="font-size:22px;">${currentAdminOrder.customer_name || '-'}</div>
+                            <p style="margin-top:8px; color:#6b7280;">${currentAdminOrder.customer_email || ''}</p>
+                        </div>
+                        <div class="admin-dashboard-card">
+                            <h3>${window.EcomI18n.getLanguage() === 'th' ? 'สรุปยอด' : 'Summary'}</h3>
+                            <div class="value" style="font-size:22px;">$${Number(currentAdminOrder.total_amount || 0).toFixed(2)}</div>
+                            <p style="margin-top:8px; color:#6b7280;">${prettyStatus(currentAdminOrder.payment_status)} • ${getPaymentMethodLabel(currentAdminOrder.payment_method)}</p>
+                        </div>
+                        <div class="admin-dashboard-card">
+                            <h3>${window.EcomI18n.getLanguage() === 'th' ? 'ผู้ให้บริการ' : 'Providers'}</h3>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px;">${(currentAdminOrder.provider_names || []).map((name) => `<span class="admin-pill">${name}</span>`).join('') || '<span class="admin-pill">-</span>'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+
+        function closeAdminBill() {
+            currentAdminOrder = null;
+            const modal = document.getElementById('adminBillModal');
+            if (modal) modal.classList.remove('show');
+        }
+
+        function handleAdminBillBackdrop(event) {
+            if (event.target.id === 'adminBillModal') {
+                closeAdminBill();
+            }
+        }
+
+        async function loadAdminOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/orders`, {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load orders');
+                }
+                const data = await response.json();
+                adminOrders = data.orders || [];
+                applyAdminOrderFilters();
+            } catch (error) {
+                showMessage(`${t("errorPrefix")} ${error.message}`, "error");
+            }
+        }
+
+        async function loadAdminProviders() {
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/providers`, {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load providers');
+                }
+                const data = await response.json();
+                adminProviders = data.providers || [];
+                populateAdminProviderFilter();
+
+                const select = document.getElementById("ownerProviderSelect");
+                if (select) {
+                    select.innerHTML = adminProviders.length
+                        ? adminProviders.map((provider) => `<option value="${provider.provider_id}">${provider.provider_name}</option>`).join("")
+                        : `<option value="">No providers</option>`;
+                }
+
+                document.getElementById("provider-shop-list").innerHTML = adminProviders.length
+                    ? `<div class="success">${adminProviders.length} provider(s) available for new shops.</div>`
+                    : `<div class="error">No provider accounts available.</div>`;
+            } catch (error) {
+                showMessage(`${t("errorPrefix")} ${error.message}`, "error");
+            }
+        }
+
         async function loadDashboard() {
             if (!token) {
                 showMessage(t("unauthorized"), "error");
@@ -556,10 +1260,10 @@
             }
             
             // Load inventory status
-            loadInventoryStatus();
-            loadSlipReviews();
-            loadProviderOwners();
-            loadAllOrders();
+            await loadInventoryStatus();
+            await loadSlipReviews();
+            await loadAdminProviders();
+            await loadAdminOrders();
         }
         
         async function loadInventoryStatus() {
@@ -846,9 +1550,17 @@
         
         // Load dashboard on page load
         window.EcomI18n.bindSelect(document.getElementById("languageSwitcher"));
-        window.EcomI18n.init(applyTranslations);
+        window.EcomI18n.init(() => {
+            applyTranslations();
+            populateAdminMonthOptions();
+            populateAdminYearOptions();
+            populateAdminProviderFilter();
+        });
         window.addEventListener("load", () => {
             applyTranslations();
+            populateAdminMonthOptions();
+            populateAdminYearOptions();
+            populateAdminProviderFilter();
             loadDashboard();
         });
         
