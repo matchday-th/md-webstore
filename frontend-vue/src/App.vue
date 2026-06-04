@@ -54,13 +54,6 @@
               >
                 บิลออเดอร์
               </button>
-              <button
-                class="border-b-2 px-6 py-5 text-lg font-semibold transition"
-                :class="workspaceTab === 'user' ? 'border-red-500 text-red-500' : 'border-transparent text-ink/55 hover:text-ink'"
-                @click="workspaceTab = 'user'"
-              >
-                สมาชิก
-              </button>
             </div>
           </div>
 
@@ -72,11 +65,7 @@
                     <p class="text-xs uppercase tracking-[0.22em] text-white/40">Dashboard Overview</p>
                     <h2 class="mt-2 text-2xl font-semibold">ภาพรวมการทำงานของร้าน</h2>
                   </div>
-                  <div class="flex flex-wrap items-center gap-3">
-                    <button class="button-secondary" type="button" @click="resetOverviewFilters">View All</button>
-                    <button class="button-secondary" type="button" @click="exportOverviewToExcel">Export Excel</button>
-                    <ClipboardDocumentListIcon class="h-6 w-6 text-white/55" />
-                  </div>
+                  <ClipboardDocumentListIcon class="h-6 w-6 text-white/55" />
                 </div>
 
                 <div class="mb-6 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
@@ -457,64 +446,6 @@
               </div>
             </section>
 
-            <section v-else class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
-                <div class="panel-header">
-                  <div>
-                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">User</p>
-                    <h2 class="mt-2 text-2xl font-semibold">Member profile manager.</h2>
-                  </div>
-                  <UserCircleIcon class="h-6 w-6 text-white/55" />
-                </div>
-
-                <form class="space-y-3" @submit.prevent="submitProfile">
-                  <div>
-                    <label class="label">Full Name</label>
-                    <input v-model="profileForm.name" class="field" type="text" required />
-                  </div>
-                  <div class="grid gap-3 md:grid-cols-2">
-                    <div>
-                      <label class="label">Email</label>
-                      <input v-model="profileForm.email" class="field" type="email" required />
-                    </div>
-                    <div>
-                      <label class="label">Role</label>
-                      <input v-model="profileForm.role" class="field" type="text" required />
-                    </div>
-                  </div>
-                  <div>
-                    <label class="label">Phone</label>
-                    <input v-model="profileForm.phone" class="field" type="text" />
-                  </div>
-                  <div>
-                    <label class="label">Address</label>
-                    <textarea v-model="profileForm.address" class="field min-h-[110px]"></textarea>
-                  </div>
-                  <div class="flex flex-wrap gap-3">
-                    <button class="button-primary" type="submit">{{ profileForm.id ? "Update Profile" : "Create Profile" }}</button>
-                    <button class="button-secondary" type="button" @click="resetProfileForm">Reset</button>
-                    <button v-if="profileForm.id" class="button-danger" type="button" @click="removeProfile(profileForm.id)">Delete</button>
-                  </div>
-                </form>
-              </article>
-
-              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-4">
-                <div class="space-y-3">
-                  <button
-                    v-for="profile in profiles"
-                    :key="profile.id"
-                    class="flex w-full items-center justify-between rounded-[1.4rem] border border-white/10 bg-white/[0.025] px-4 py-4 text-left transition hover:border-white/25"
-                    @click="editProfile(profile)"
-                  >
-                    <div>
-                      <p class="font-medium">{{ profile.name }}</p>
-                      <p class="mt-1 text-sm text-white/45">{{ profile.role }} · {{ profile.email }}</p>
-                    </div>
-                    <ChevronRightIcon class="h-5 w-5 text-white/35" />
-                  </button>
-                </div>
-              </article>
-            </section>
           </div>
         </section>
       </main>
