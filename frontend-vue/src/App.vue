@@ -28,6 +28,13 @@
             <div class="flex flex-wrap items-end gap-0 overflow-x-auto">
               <button
                 class="border-b-2 px-6 py-5 text-lg font-semibold transition"
+                :class="workspaceTab === 'overview' ? 'border-red-500 text-red-500' : 'border-transparent text-ink/55 hover:text-ink'"
+                @click="workspaceTab = 'overview'"
+              >
+                ภาพรวม
+              </button>
+              <button
+                class="border-b-2 px-6 py-5 text-lg font-semibold transition"
                 :class="workspaceTab === 'storefront' ? 'border-red-500 text-red-500' : 'border-transparent text-ink/55 hover:text-ink'"
                 @click="workspaceTab = 'storefront'"
               >
@@ -58,6 +65,128 @@
           </div>
 
           <div class="p-6">
+            <section v-if="workspaceTab === 'overview'" class="space-y-6">
+              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
+                <div class="panel-header">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">Dashboard Overview</p>
+                    <h2 class="mt-2 text-2xl font-semibold">ภาพรวมการทำงานของร้าน</h2>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-3">
+                    <button class="button-secondary" type="button" @click="resetOverviewFilters">View All</button>
+                    <button class="button-secondary" type="button" @click="exportOverviewToExcel">Export Excel</button>
+                    <ClipboardDocumentListIcon class="h-6 w-6 text-white/55" />
+                  </div>
+                </div>
+
+                <div class="mb-6 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                  <div>
+                    <label class="label">Provider Filter</label>
+                    <select v-model="overviewFilters.providerId" class="field">
+                      <option value="">แสดงทั้งหมด</option>
+                      <option v-for="provider in providers" :key="provider.provider_id" :value="provider.provider_id">
+                        {{ provider.provider_name }}
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="label">วัน</label>
+                    <input v-model="overviewFilters.day" class="field" type="date" />
+                  </div>
+                  <div>
+                    <label class="label">เดือน / ปี</label>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <select v-model="overviewFilters.month" class="field">
+                        <option value="">ทุกเดือน</option>
+                        <option v-for="option in monthOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                      </select>
+                      <select v-model="overviewFilters.year" class="field">
+                        <option value="">ทุกปี</option>
+                        <option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-6 flex flex-wrap gap-3">
+                  <button class="button-primary" type="button" @click="applyOverviewFilters">Load Dashboard</button>
+                  <button class="button-secondary" type="button" @click="resetOverviewFilters">Reset Filters</button>
+                </div>
+
+                <div class="admin-dashboard-grid">
+                  <article v-for="card in overviewCards" :key="card.label" class="admin-dashboard-card">
+                    <h3>{{ card.label }}</h3>
+                    <p class="value">{{ card.value }}</p>
+                    <p class="mt-3 text-sm text-white/40">{{ card.note }}</p>
+                  </article>
+                </div>
+              </article>
+
+              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
+                <div class="panel-header">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">Overview Ledger</p>
+                    <h2 class="mt-2 text-2xl font-semibold">รายการออเดอร์ที่ตรงกับตัวกรอง</h2>
+                  </div>
+                  <span class="chip">{{ overviewFilteredOrders.length }} orders</span>
+                </div>
+
+                <div v-if="overviewFilteredOrders.length" class="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/[0.025]">
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-white/10 text-sm">
+                      <thead class="bg-white/[0.05] text-left text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
+                        <tr>
+                          <th class="px-5 py-4">#</th>
+                          <th class="px-5 py-4">Date</th>
+                          <th class="px-5 py-4">Invoice</th>
+                          <th class="px-5 py-4">Provider</th>
+                          <th class="px-5 py-4">Customer</th>
+                          <th class="px-5 py-4">Payment</th>
+                          <th class="px-5 py-4">Method</th>
+                          <th class="px-5 py-4">Total</th>
+                          <th class="px-5 py-4">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-white/5 bg-transparent">
+                        <tr
+                          v-for="(order, index) in overviewFilteredOrders"
+                          :key="'overview-' + order.id"
+                          class="transition hover:bg-white/[0.03]"
+                        >
+                          <td class="px-5 py-4 text-white/45">{{ index + 1 }}</td>
+                          <td class="px-5 py-4 text-white/65">{{ formatDate(order.created_at) }}</td>
+                          <td class="px-5 py-4">
+                            <div class="font-medium text-white">{{ order.invoice_number || '-' }}</div>
+                            <div class="mt-1 text-xs text-white/40">Order #{{ order.id }}</div>
+                          </td>
+                          <td class="px-5 py-4 text-white/60">{{ getOrderProviderNames(order).join(' · ') || '-' }}</td>
+                          <td class="px-5 py-4">
+                            <div class="font-medium text-white">{{ order.user_name || '-' }}</div>
+                            <div class="mt-1 text-xs text-white/40">{{ order.customer_email || '-' }}</div>
+                          </td>
+                          <td class="px-5 py-4">
+                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]" :class="paymentBadgeClass(order.payment_status)">
+                              {{ prettyPaymentStatus(order.payment_status) }}
+                            </span>
+                          </td>
+                          <td class="px-5 py-4 text-white/60">{{ prettyLabel(order.payment_method) }}</td>
+                          <td class="px-5 py-4 font-medium text-white">{{ money(order.total) }}</td>
+                          <td class="px-5 py-4">
+                            <button class="button-primary" type="button" @click="openOrderBill(order)">
+                              ดูบิล
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div v-else class="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-white/40">
+                  No overview data for this filter.
+                </div>
+              </article>
+            </section>
+
             <section v-if="workspaceTab === 'storefront'" class="space-y-6">
               <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
                 <div class="panel-header">
@@ -234,14 +363,45 @@
                 <ClipboardDocumentListIcon class="h-6 w-6 text-white/55" />
               </div>
 
-              <div class="mb-5 max-w-sm">
-                <label class="label">Provider Filter</label>
-                <select v-model="selectedOrderProvider" class="field">
-                  <option value="">แสดงทั้งหมด</option>
-                  <option v-for="provider in providers" :key="provider.provider_id" :value="provider.provider_id">
-                    {{ provider.provider_name }}
-                  </option>
-                </select>
+              <div class="mb-5 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                <div>
+                  <label class="label">Provider Filter</label>
+                  <select v-model="orderFilters.providerId" class="field">
+                    <option value="">แสดงทั้งหมด</option>
+                    <option v-for="provider in providers" :key="provider.provider_id" :value="provider.provider_id">
+                      {{ provider.provider_name }}
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label class="label">เดือน</label>
+                  <select v-model="orderFilters.month" class="field">
+                    <option value="">ทุกเดือน</option>
+                    <option v-for="option in monthOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="label">ปี</label>
+                  <select v-model="orderFilters.year" class="field">
+                    <option value="">ทุกปี</option>
+                    <option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mb-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
+                <div>
+                  <label class="label">วัน</label>
+                  <input v-model="orderFilters.day" class="field" type="date" />
+                </div>
+                <div class="flex items-end">
+                  <button class="button-secondary w-full" type="button" @click="resetOrderFilters">Reset Filters</button>
+                </div>
+                <div class="flex items-end">
+                  <button class="button-primary w-full" type="button" @click="applyOrderFilters">Load Orders</button>
+                </div>
+                <div class="flex items-end">
+                  <button class="button-secondary w-full" type="button" @click="exportOrdersToExcel">Export Excel</button>
+                </div>
               </div>
 
               <div v-if="filteredOrders.length" class="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/[0.025]">
@@ -559,7 +719,18 @@ export default {
       shopMessage: "",
       showShopModal: false,
       currentSalesBill: null,
-      selectedOrderProvider: ""
+      orderFilters: {
+        providerId: "",
+        day: "",
+        month: "",
+        year: ""
+      },
+      overviewFilters: {
+        providerId: "",
+        day: "",
+        month: "",
+        year: ""
+      }
     };
   },
   computed: {
@@ -581,14 +752,6 @@ export default {
     orders() {
       return this.store?.orders || [];
     },
-    filteredOrders() {
-      if (!this.selectedOrderProvider) {
-        return this.orders;
-      }
-      return this.orders.filter((order) =>
-        (order.items || []).some((item) => item.providerId === this.selectedOrderProvider)
-      );
-    },
     featuredProducts() {
       return this.store?.featuredProducts || [];
     },
@@ -600,6 +763,80 @@ export default {
     },
     errorMessage() {
       return this.store?.error || "";
+    },
+    monthOptions() {
+      return [
+        { value: "1", label: "มกราคม" },
+        { value: "2", label: "กุมภาพันธ์" },
+        { value: "3", label: "มีนาคม" },
+        { value: "4", label: "เมษายน" },
+        { value: "5", label: "พฤษภาคม" },
+        { value: "6", label: "มิถุนายน" },
+        { value: "7", label: "กรกฎาคม" },
+        { value: "8", label: "สิงหาคม" },
+        { value: "9", label: "กันยายน" },
+        { value: "10", label: "ตุลาคม" },
+        { value: "11", label: "พฤศจิกายน" },
+        { value: "12", label: "ธันวาคม" }
+      ];
+    },
+    yearOptions() {
+      const currentYear = new Date().getFullYear();
+      return Array.from({ length: 6 }, (_, index) => String(currentYear - index));
+    },
+    filteredOrders() {
+      return this.filterOrders(this.orders, this.orderFilters);
+    },
+    overviewFilteredOrders() {
+      return this.filterOrders(this.orders, this.overviewFilters);
+    },
+    overviewStats() {
+      const orders = this.overviewFilteredOrders;
+      const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+      const providerCount = new Set(orders.flatMap((order) => this.getOrderProviderIds(order))).size;
+      const paidOrders = orders.filter((order) => this.isPaidStatus(order.payment_status)).length;
+      const uniqueCustomers = new Set(
+        orders.map((order) => String(order.user_name || order.customer_email || order.profile_id || "").trim()).filter(Boolean)
+      ).size;
+      return {
+        totalOrders: orders.length,
+        totalRevenue,
+        avgOrderValue: orders.length ? totalRevenue / orders.length : 0,
+        providerCount,
+        paidOrders,
+        uniqueCustomers,
+        paidRate: orders.length ? (paidOrders / orders.length) * 100 : 0
+      };
+    },
+    overviewCards() {
+      const stats = this.overviewStats;
+      return [
+        {
+          label: "Orders",
+          value: String(stats.totalOrders),
+          note: stats.uniqueCustomers + " unique customers in view"
+        },
+        {
+          label: "Revenue",
+          value: this.money(stats.totalRevenue),
+          note: "Combined value from filtered orders"
+        },
+        {
+          label: "Avg Order Value",
+          value: this.money(stats.avgOrderValue),
+          note: "Average basket size"
+        },
+        {
+          label: "Providers",
+          value: String(stats.providerCount),
+          note: "Unique providers contributing to this view"
+        },
+        {
+          label: "Paid Orders",
+          value: String(stats.paidOrders),
+          note: Math.round(stats.paidRate) + "% paid rate"
+        }
+      ];
     }
   },
   async mounted() {
@@ -641,7 +878,7 @@ export default {
     },
     prettyLabel(value) {
       if (!value) return "-";
-      return String(value).replaceAll("_", " ").replace(/\w/g, (char) => char.toUpperCase());
+      return String(value).replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
     },
     providerInitial(value) {
       return String(value || "S").trim().charAt(0).toUpperCase() || "S";
@@ -662,6 +899,117 @@ export default {
         return "bg-emerald-400/15 text-emerald-200";
       }
       return "bg-white/10 text-white/70";
+    },
+    isPaidStatus(status) {
+      const normalized = String(status || "").toLowerCase();
+      return normalized.includes("paid") || normalized.includes("success") || normalized.includes("complete");
+    },
+    getOrderProviderIds(order) {
+      return [...new Set((order?.items || []).map((item) => String(item.providerId || item.provider_id || "").trim()).filter(Boolean))];
+    },
+    getOrderProviderNames(order) {
+      const ids = this.getOrderProviderIds(order);
+      if (!ids.length) {
+        return ["-"];
+      }
+      return ids.map((providerId) => {
+        const provider = this.providers.find((entry) => entry.provider_id === providerId);
+        return provider?.provider_name || providerId;
+      });
+    },
+    filterOrders(orders, filters = {}) {
+      const providerId = String(filters.providerId || "").trim();
+      const day = String(filters.day || "").trim();
+      const month = String(filters.month || "").trim();
+      const year = String(filters.year || "").trim();
+      const dayParts = day ? this.parseDateParts(day) : null;
+
+      return (orders || []).filter((order) => {
+        const providerIds = this.getOrderProviderIds(order);
+        if (providerId && !providerIds.includes(providerId)) {
+          return false;
+        }
+
+        const parts = this.parseDateParts(order.created_at);
+        if (!parts) {
+          return false;
+        }
+
+        if (dayParts) {
+          return parts.year === dayParts.year && parts.month === dayParts.month && parts.day === dayParts.day;
+        }
+
+        if (month && String(parts.month) !== String(Number(month))) {
+          return false;
+        }
+        if (year && String(parts.year) !== String(Number(year))) {
+          return false;
+        }
+        return true;
+      });
+    },
+    parseDateParts(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return null;
+      }
+      return {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate()
+      };
+    },
+    resetOrderFilters() {
+      this.orderFilters = {
+        providerId: "",
+        day: "",
+        month: "",
+        year: ""
+      };
+    },
+    resetOverviewFilters() {
+      this.overviewFilters = {
+        providerId: "",
+        day: "",
+        month: "",
+        year: ""
+      };
+    },
+    applyOrderFilters() {
+      return this.filteredOrders.length;
+    },
+    applyOverviewFilters() {
+      return this.overviewFilteredOrders.length;
+    },
+    exportOrdersToExcel(scope = "orders") {
+      const sourceOrders = scope === "overview" ? this.overviewFilteredOrders : this.filteredOrders;
+      const rows = sourceOrders.map((order, index) => ({
+        "#": index + 1,
+        Date: this.formatDate(order.created_at),
+        Invoice: order.invoice_number || "-",
+        Provider: this.getOrderProviderNames(order).join(" · ") || "-",
+        Customer: order.user_name || "-",
+        Email: order.customer_email || "-",
+        Payment: this.prettyPaymentStatus(order.payment_status),
+        Method: this.prettyLabel(order.payment_method),
+        Total: Number(order.total || 0),
+        Items: (order.items || []).length
+      }));
+
+      if (!window.XLSX) {
+        window.alert("Excel library is loading, please try again in a moment.");
+        return;
+      }
+
+      const worksheet = window.XLSX.utils.json_to_sheet(rows);
+      const workbook = window.XLSX.utils.book_new();
+      const sheetName = scope === "overview" ? "Overview" : "Orders";
+      window.XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      window.XLSX.writeFile(workbook, sheetName.toLowerCase() + "-" + dateStamp + ".xlsx");
+    },
+    exportOverviewToExcel() {
+      this.exportOrdersToExcel("overview");
     },
     openOrderBill(order) {
       this.currentSalesBill = order;

@@ -44,4 +44,20 @@
   .chip {
     @apply inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-white/55;
   }
+
+  .admin-dashboard-grid {
+    @apply grid gap-4 md:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .admin-dashboard-card {
+    @apply rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm;
+  }
+
+  .admin-dashboard-card h3 {
+    @apply text-xs uppercase tracking-[0.22em] text-white/35;
+  }
+
+  .admin-dashboard-card .value {
+    @apply mt-4 text-3xl font-semibold tracking-tight text-white;
+  }
 }
