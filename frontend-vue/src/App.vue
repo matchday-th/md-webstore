@@ -118,69 +118,6 @@
                 </div>
               </article>
 
-              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
-                <div class="panel-header">
-                  <div>
-                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">Overview Ledger</p>
-                    <h2 class="mt-2 text-2xl font-semibold">รายการออเดอร์ที่ตรงกับตัวกรอง</h2>
-                  </div>
-                  <span class="chip">{{ overviewFilteredOrders.length }} orders</span>
-                </div>
-
-                <div v-if="overviewFilteredOrders.length" class="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/[0.025]">
-                  <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-white/10 text-sm">
-                      <thead class="bg-white/[0.05] text-left text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
-                        <tr>
-                          <th class="px-5 py-4">#</th>
-                          <th class="px-5 py-4">Date</th>
-                          <th class="px-5 py-4">Invoice</th>
-                          <th class="px-5 py-4">Provider</th>
-                          <th class="px-5 py-4">Customer</th>
-                          <th class="px-5 py-4">Payment</th>
-                          <th class="px-5 py-4">Method</th>
-                          <th class="px-5 py-4">Total</th>
-                          <th class="px-5 py-4">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-white/5 bg-transparent">
-                        <tr
-                          v-for="(order, index) in overviewFilteredOrders"
-                          :key="'overview-' + order.id"
-                          class="transition hover:bg-white/[0.03]"
-                        >
-                          <td class="px-5 py-4 text-white/45">{{ index + 1 }}</td>
-                          <td class="px-5 py-4 text-white/65">{{ formatDate(order.created_at) }}</td>
-                          <td class="px-5 py-4">
-                            <div class="font-medium text-white">{{ order.invoice_number || '-' }}</div>
-                            <div class="mt-1 text-xs text-white/40">Order #{{ order.id }}</div>
-                          </td>
-                          <td class="px-5 py-4 text-white/60">{{ getOrderProviderNames(order).join(' · ') || '-' }}</td>
-                          <td class="px-5 py-4">
-                            <div class="font-medium text-white">{{ order.user_name || '-' }}</div>
-                            <div class="mt-1 text-xs text-white/40">{{ order.customer_email || '-' }}</div>
-                          </td>
-                          <td class="px-5 py-4">
-                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]" :class="paymentBadgeClass(order.payment_status)">
-                              {{ prettyPaymentStatus(order.payment_status) }}
-                            </span>
-                          </td>
-                          <td class="px-5 py-4 text-white/60">{{ prettyLabel(order.payment_method) }}</td>
-                          <td class="px-5 py-4 font-medium text-white">{{ money(order.total) }}</td>
-                          <td class="px-5 py-4">
-                            <button class="button-primary" type="button" @click="openOrderBill(order)">
-                              ดูบิล
-                            </button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div v-else class="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-white/40">
-                  No overview data for this filter.
-                </div>
-              </article>
             </section>
 
             <section v-else-if="workspaceTab === 'ai'" class="space-y-6">
