@@ -298,12 +298,68 @@
             align-items: center;
         }
 
+        .settings-main-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .settings-main-tab {
+            border: 1px solid rgba(17, 17, 17, 0.08);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 14px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #525252;
+            transition: all 0.2s ease;
+        }
+
+        .settings-main-tab.active {
+            background: #111111;
+            color: #ffffff;
+            border-color: #111111;
+            box-shadow: 0 10px 24px rgba(15, 15, 15, 0.12);
+        }
+
+        .settings-main-tab:disabled,
+        .settings-address-tab:disabled,
+        .settings-toggle:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .settings-edit-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
         .section-filter-grid.two {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .section-filter-grid.four {
             grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .dashboard-performance-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+
+        @media (min-width: 768px) {
+            .dashboard-performance-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .dashboard-performance-grid {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+            }
         }
 
         .sales-bill-modal-content {
@@ -467,6 +523,43 @@
                         <p class="mt-3 text-sm text-neutral-500">Total orders connected to your product catalog.</p>
                     </div>
                 </div>
+
+                <div class="mt-8">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p class="section-kicker">Performance</p>
+                            <h3 id="dashboardPerformanceTitle" class="mt-2 text-xl font-semibold tracking-tight text-black">Store performance snapshot</h3>
+                        </div>
+                        <p class="max-w-xl text-sm text-neutral-500">A quick read on sell-through, stock health, and activity over the selected period.</p>
+                    </div>
+                    <div class="dashboard-performance-grid mt-5">
+                        <div class="rounded-[24px] border border-black/10 bg-white/85 p-5 shadow-panel backdrop-blur">
+                            <h4 id="dashboardTotalStockLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">📦 Total Stock</h4>
+                            <div class="mt-4 text-3xl font-semibold tracking-tight text-black" id="dashboardTotalStock">0</div>
+                            <p class="mt-3 text-sm text-neutral-500">Units currently available across all products.</p>
+                        </div>
+                        <div class="rounded-[24px] border border-black/10 bg-white/85 p-5 shadow-panel backdrop-blur">
+                            <h4 id="dashboardSoldUnitsLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">📈 Sold Units</h4>
+                            <div class="mt-4 text-3xl font-semibold tracking-tight text-black" id="dashboardSoldUnits">0</div>
+                            <p class="mt-3 text-sm text-neutral-500">Total units sold in the selected period.</p>
+                        </div>
+                        <div class="rounded-[24px] border border-black/10 bg-white/85 p-5 shadow-panel backdrop-blur">
+                            <h4 id="dashboardLowStockLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">⚠️ Low Stock Items</h4>
+                            <div class="mt-4 text-3xl font-semibold tracking-tight text-black" id="dashboardLowStockCount">0</div>
+                            <p class="mt-3 text-sm text-neutral-500">Products below the 5-unit warning threshold.</p>
+                        </div>
+                        <div class="rounded-[24px] border border-black/10 bg-white/85 p-5 shadow-panel backdrop-blur">
+                            <h4 id="dashboardOrdersTodayLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">🕒 Orders Today</h4>
+                            <div class="mt-4 text-3xl font-semibold tracking-tight text-black" id="dashboardOrdersToday">0</div>
+                            <p class="mt-3 text-sm text-neutral-500">Orders created since midnight.</p>
+                        </div>
+                        <div class="rounded-[24px] border border-black/10 bg-white/85 p-5 shadow-panel backdrop-blur">
+                            <h4 id="dashboardAvgOrderValueLabel" class="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">💰 Avg Order Value</h4>
+                            <div class="mt-4 text-3xl font-semibold tracking-tight text-black" id="dashboardAvgOrderValue">$0.00</div>
+                            <p class="mt-3 text-sm text-neutral-500">Average value per completed order.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -593,97 +686,109 @@
         </div>
 
         <div id="provider-settings" class="tab-content">
-            <div class="rounded-[32px] border border-black/10 bg-white/88 p-6 shadow-panel backdrop-blur sm:p-8">
-                <div class="mb-8 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div class="rounded-[32px] section-shell p-6 sm:p-8">
+                <div class="section-header flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Provider Settings</p>
-                        <h2 id="providerSettingsTitle" class="mt-2 text-2xl font-semibold tracking-tight text-black">⚙️ Tax & Company Settings</h2>
+                        <p class="section-kicker">Provider Settings</p>
+                        <h2 id="providerSettingsTitle" class="section-title">⚙️ Tax & Company Settings</h2>
+                        <p id="providerSettingsSubtitle" class="section-copy">Manage VAT registration and invoice address details for your provider account.</p>
                     </div>
-                    <p id="providerSettingsSubtitle" class="max-w-md text-sm text-neutral-500">Manage VAT registration and invoice address details for your provider account.</p>
+                    <div class="section-filter-card min-w-0 xl:min-w-[540px]">
+                        <div class="section-filter-head">
+                            <span class="section-filter-tag">Tabs</span>
+                            <div class="section-filter-note">Switch between tax settings and staff accounts.</div>
+                        </div>
+                        <div class="settings-main-tabs">
+                            <button type="button" id="settingsMainTabTax" class="settings-main-tab active" onclick="setSettingsMainTab('tax')">ตั้งค่าภาษี</button>
+                            <button type="button" id="settingsMainTabStaff" class="settings-main-tab" onclick="setSettingsMainTab('staff')">ตั้งค่าพนักงาน</button>
+                        </div>
+                    </div>
                 </div>
 
-                <form id="providerSettingsForm" onsubmit="saveProviderSettings(event)">
-                    <input type="hidden" id="settingsAddressMode" value="registered">
-                    <input type="hidden" id="settingsVatRegistered" value="false">
+                <div id="providerSettingsTaxSection">
+                    <form id="providerSettingsForm" onsubmit="handleProviderSettingsFormSubmit(event)">
+                        <input type="hidden" id="settingsAddressMode" value="registered">
 
-                    <div class="mb-8">
-                        <label class="mb-3">VAT</label>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <button type="button" id="vatRegisteredButton" class="settings-toggle rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700" onclick="setVatRegistered(true)">จด VAT</button>
-                            <button type="button" id="vatNotRegisteredButton" class="settings-toggle rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700" onclick="setVatRegistered(false)">ไม่จด VAT</button>
+                        <div class="mb-8">
+                            <label id="settingsVatLabel" class="mb-3">สถานะ VAT</label>
+                            <select id="settingsVatStatus" class="max-w-xl" disabled>
+                                <option value="registered">จด VAT</option>
+                                <option value="not_registered">ไม่จด VAT</option>
+                            </select>
                         </div>
-                    </div>
 
-                    <div class="grid gap-5 md:grid-cols-2">
-                        <div class="form-group">
-                            <label>เลขประจำตัวผู้เสียภาษี</label>
-                            <input type="text" id="settingsTaxId" placeholder="เลขประจำตัวผู้เสียภาษี">
+                        <div class="grid gap-5 md:grid-cols-2">
+                            <div class="form-group">
+                                <label>เลขประจำตัวผู้เสียภาษี</label>
+                                <input type="text" id="settingsTaxId" placeholder="เลขประจำตัวผู้เสียภาษี" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>ชื่อผู้เสียภาษี</label>
+                                <input type="text" id="settingsTaxName" placeholder="ชื่อผู้เสียภาษี" disabled>
+                            </div>
+                            <div class="form-group md:col-span-2">
+                                <label>ชื่อบริษัท</label>
+                                <input type="text" id="settingsCompanyName" placeholder="ชื่อร้านค้า / บริษัท" disabled>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>ชื่อผู้เสียภาษี</label>
-                            <input type="text" id="settingsTaxName" placeholder="ชื่อผู้เสียภาษี">
-                        </div>
-                        <div class="form-group md:col-span-2">
-                            <label>ชื่อบริษัท</label>
-                            <input type="text" id="settingsCompanyName" placeholder="ชื่อร้านค้า / บริษัท">
-                        </div>
-                    </div>
 
-                    <div class="border-t-4 border-red-500 pt-6"></div>
+                        <div class="border-t-4 border-red-500 pt-6"></div>
 
-                    <div class="mb-6 flex flex-wrap gap-3 border-b border-black/10 pb-5">
-                        <button type="button" id="settingsTabRegistered" class="settings-address-tab active rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700" onclick="setSettingsAddressMode('registered')">ใบกำกับภาษี</button>
-                        <button type="button" id="settingsTabBranch" class="settings-address-tab rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700" onclick="setSettingsAddressMode('branch')">ใบกำกับภาษีแบบจด vat</button>
-                        <button type="button" id="settingsTabCustom" class="settings-address-tab rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700" onclick="setSettingsAddressMode('custom')">ใบกำกับภาษี (ปรับแต่งเอง)</button>
-                    </div>
+                        <div class="mb-6 flex flex-wrap gap-3 border-b border-black/10 pb-5">
+                            <button type="button" id="settingsTabRegistered" class="settings-address-tab active rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700" onclick="setSettingsAddressMode('registered')" disabled>ใบกำกับภาษี</button>
+                            <button type="button" id="settingsTabBranch" class="settings-address-tab rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700" onclick="setSettingsAddressMode('branch')" disabled>ใบกำกับภาษีแบบจด vat</button>
+                            <button type="button" id="settingsTabCustom" class="settings-address-tab rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700" onclick="setSettingsAddressMode('custom')" disabled>ใบกำกับภาษี (ปรับแต่งเอง)</button>
+                        </div>
 
-                    <div id="settingsPanelRegistered" class="grid gap-5 md:grid-cols-2">
-                        <div class="form-group">
-                            <label>ที่อยู่ผู้เสียภาษี</label>
-                            <input type="text" id="settingsRegisteredAddress1" placeholder="ที่อยู่ผู้เสียภาษี">
+                        <div id="settingsPanelRegistered" class="grid gap-5 md:grid-cols-2">
+                            <div class="form-group">
+                                <label>ที่อยู่ผู้เสียภาษี</label>
+                                <input type="text" id="settingsRegisteredAddress1" placeholder="ที่อยู่ผู้เสียภาษี" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>ที่อยู่ผู้เสียภาษี 2</label>
+                                <input type="text" id="settingsRegisteredAddress2" placeholder="ที่อยู่ผู้เสียภาษี 2" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>เลขสาขา</label>
+                                <input type="text" id="settingsBranchNumber" placeholder="เลขสาขา" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>ข้อความท้าย ณ ที่จ่าย</label>
+                                <input type="text" id="settingsNote" placeholder="ข้อความท้าย ณ ที่จ่าย" disabled>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>ที่อยู่ผู้เสียภาษี 2</label>
-                            <input type="text" id="settingsRegisteredAddress2" placeholder="ที่อยู่ผู้เสียภาษี 2">
-                        </div>
-                        <div class="form-group">
-                            <label>เลขสาขา</label>
-                            <input type="text" id="settingsBranchNumber" placeholder="เลขสาขา">
-                        </div>
-                        <div class="form-group">
-                            <label>ข้อความท้าย ณ ที่จ่าย</label>
-                            <input type="text" id="settingsNote" placeholder="ข้อความท้าย ณ ที่จ่าย">
-                        </div>
-                    </div>
 
-                    <div id="settingsPanelBranch" class="hidden grid gap-5 md:grid-cols-2">
-                        <div class="form-group">
-                            <label>ที่อยู่เสียภาษี 3</label>
-                            <input type="text" id="settingsBranchAddress1" placeholder="ที่อยู่เสียภาษี 3">
+                        <div id="settingsPanelBranch" class="hidden grid gap-5 md:grid-cols-2">
+                            <div class="form-group">
+                                <label>ที่อยู่เสียภาษี 3</label>
+                                <input type="text" id="settingsBranchAddress1" placeholder="ที่อยู่เสียภาษี 3" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>ที่อยู่เสียภาษี 4</label>
+                                <input type="text" id="settingsBranchAddress2" placeholder="ที่อยู่เสียภาษี 4" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>เลขสาขาแบบย่อ</label>
+                                <input type="text" id="settingsBranchNumberAlt" placeholder="เลขสาขาแบบย่อ" disabled>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>ที่อยู่เสียภาษี 4</label>
-                            <input type="text" id="settingsBranchAddress2" placeholder="ที่อยู่เสียภาษี 4">
-                        </div>
-                        <div class="form-group">
-                            <label>เลขสาขาแบบย่อ</label>
-                            <input type="text" id="settingsBranchNumberAlt" placeholder="เลขสาขาแบบย่อ">
-                        </div>
-                    </div>
 
-                    <div id="settingsPanelCustom" class="hidden">
-                        <div class="form-group">
-                            <label>ที่อยู่ที่จะออกใบกำกับภาษี</label>
-                            <textarea id="settingsCustomTaxAddress" placeholder="ที่อยู่ที่จะออกใบกำกับภาษี"></textarea>
+                        <div id="settingsPanelCustom" class="hidden">
+                            <div class="form-group">
+                                <label>ที่อยู่ที่จะออกใบกำกับภาษี</label>
+                                <textarea id="settingsCustomTaxAddress" placeholder="ที่อยู่ที่จะออกใบกำกับภาษี" disabled></textarea>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mt-4 flex justify-end">
-                        <button type="submit" id="saveProviderSettingsButton" class="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800">บันทึกการตั้งค่า</button>
-                    </div>
-                </form>
+                        <div class="mt-6 settings-edit-toolbar">
+                            <button type="button" id="settingsCancelButton" class="hidden rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black" onclick="cancelProviderSettingsEdit()">ยกเลิก</button>
+                            <button type="submit" id="settingsEditButton" class="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800">แก้ไข</button>
+                        </div>
+                    </form>
+                </div>
 
-                <div id="providerStaffSection" class="mt-10 border-t border-black/10 pt-8">
+                <div id="providerStaffSection" class="mt-10 hidden border-t border-black/10 pt-8">
                     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Staff Accounts</p>
@@ -726,8 +831,6 @@
                 </div>
             </div>
         </div>
-
-    </div>
 
     <div id="editModal" class="modal" onclick="handleModalBackdrop(event)">
         <div class="modal-content">
@@ -1007,6 +1110,8 @@
         let currentEditingProductId = null;
         let currentSalesBill = null;
         let providerSettings = null;
+        let providerSettingsEditMode = false;
+        let currentProviderSettingsTab = 'tax';
         let currentProviderProfile = null;
         let providerStaffAccounts = [];
         let currentEditingStaffId = null;
@@ -1037,6 +1142,18 @@
                 tabProviderSettings: "⚙️ Settings",
                 providerSettingsTitle: "⚙️ Tax & Company Settings",
                 providerSettingsSubtitle: "Manage VAT registration and invoice address details for your provider account.",
+                settingsMainTabTax: "Tax Settings",
+                settingsMainTabStaff: "Staff Settings",
+                settingsVatLabel: "VAT Status",
+                settingsEditButton: "Edit",
+                settingsSaveButton: "Save",
+                settingsCancelButton: "Cancel",
+                dashboardPerformanceTitle: "Store performance snapshot",
+                dashboardTotalStockLabel: "📦 Total Stock",
+                dashboardSoldUnitsLabel: "📈 Sold Units",
+                dashboardLowStockLabel: "⚠️ Low Stock Items",
+                dashboardOrdersTodayLabel: "🕒 Orders Today",
+                dashboardAvgOrderValueLabel: "💰 Avg Order Value",
                 inventoryHubTitle: "📦 Inventory Workspace",
                 openAddProductButton: "➕ Create Product",
                 openRestockButton: "📦 Update Stock",
@@ -1161,6 +1278,18 @@
                 tabProviderSettings: "⚙️ ตั้งค่า",
                 providerSettingsTitle: "⚙️ ตั้งค่าภาษีและบริษัท",
                 providerSettingsSubtitle: "กำหนดสถานะ VAT และข้อมูลที่อยู่ออกเอกสารของบัญชีผู้ให้บริการ",
+                settingsMainTabTax: "ตั้งค่าภาษี",
+                settingsMainTabStaff: "ตั้งค่าพนักงาน",
+                settingsVatLabel: "สถานะ VAT",
+                settingsEditButton: "แก้ไข",
+                settingsSaveButton: "บันทึก",
+                settingsCancelButton: "ยกเลิก",
+                dashboardPerformanceTitle: "ภาพรวม performance ร้าน",
+                dashboardTotalStockLabel: "📦 สต็อกรวม",
+                dashboardSoldUnitsLabel: "📈 หน่วยที่ขาย",
+                dashboardLowStockLabel: "⚠️ สินค้าใกล้หมด",
+                dashboardOrdersTodayLabel: "🕒 คำสั่งซื้อวันนี้",
+                dashboardAvgOrderValueLabel: "💰 มูลค่าเฉลี่ยต่อบิล",
                 inventoryHubTitle: "📦 พื้นที่จัดการคลังสินค้า",
                 openAddProductButton: "➕ สร้างสินค้า",
                 openRestockButton: "📦 เติมสต็อก",
@@ -1329,7 +1458,7 @@
 
             const staffSection = document.getElementById('providerStaffSection');
             if (staffSection) {
-                staffSection.classList.toggle('hidden', !permissions.settings);
+                staffSection.classList.toggle('hidden', !permissions.settings || currentProviderSettingsTab !== 'staff');
             }
 
             const currentActive = document.querySelector('.tab-content.active')?.id;
@@ -1343,7 +1472,7 @@
             [
                 "pageTitle","pageSubtitle","logoutButton","statProductsLabel","statStockLabel",
                 "statRevenueLabel","statOrdersLabel","tabDashboard","dashboardTitle","dashboardSubtitle","dashboardMonthLabel","dashboardYearLabel","dashboardApplyButton","dashboardAllButton","tabInventoryHub","tabSalesHistory","tabRestockHistory","tabProviderSettings",
-                "inventoryHubTitle","openAddProductButton","openRestockButton","providerSettingsTitle","providerSettingsSubtitle",
+                "inventoryHubTitle","openAddProductButton","openRestockButton","providerSettingsTitle","providerSettingsSubtitle","settingsMainTabTax","settingsMainTabStaff","settingsVatLabel","settingsEditButton","settingsSaveButton","settingsCancelButton","dashboardPerformanceTitle","dashboardTotalStockLabel","dashboardSoldUnitsLabel","dashboardLowStockLabel","dashboardOrdersTodayLabel","dashboardAvgOrderValueLabel",
                 "addProductTitle","addNameLabel","addSkuLabel","addCategoryLabel","addPriceLabel",
                 "addStockLabel","addImageLabel","addDescriptionLabel","addProductButton","manageStockTitle",
                 "selectProductLabel","quantityLabel","reasonLabel","addStockButton","myProductsTitle",
@@ -1773,16 +1902,62 @@
             } else if (tabName === 'restock-history') {
                 loadRestockHistory();
             } else if (tabName === 'provider-settings') {
+                setSettingsMainTab(currentProviderSettingsTab || 'tax');
                 loadProviderSettings();
                 loadProviderStaff();
             }
         }
 
+        function setVatStatus(status) {
+            const select = document.getElementById('settingsVatStatus');
+            if (!select) return;
+            select.value = status === 'registered' ? 'registered' : 'not_registered';
+        }
+
         function setVatRegistered(value) {
-            const normalized = value ? 'true' : 'false';
-            document.getElementById('settingsVatRegistered').value = normalized;
-            document.getElementById('vatRegisteredButton').classList.toggle('active', value);
-            document.getElementById('vatNotRegisteredButton').classList.toggle('active', !value);
+            setVatStatus(value ? 'registered' : 'not_registered');
+        }
+
+        function setProviderSettingsEditMode(isEditing) {
+            providerSettingsEditMode = Boolean(isEditing);
+            const editableIds = [
+                'settingsVatStatus',
+                'settingsTaxId',
+                'settingsTaxName',
+                'settingsCompanyName',
+                'settingsRegisteredAddress1',
+                'settingsRegisteredAddress2',
+                'settingsBranchNumber',
+                'settingsNote',
+                'settingsBranchAddress1',
+                'settingsBranchAddress2',
+                'settingsBranchNumberAlt',
+                'settingsCustomTaxAddress'
+            ];
+            editableIds.forEach((id) => {
+                const element = document.getElementById(id);
+                if (element) element.disabled = !isEditing;
+            });
+            ['settingsTabRegistered', 'settingsTabBranch', 'settingsTabCustom'].forEach((id) => {
+                const element = document.getElementById(id);
+                if (element) element.disabled = !isEditing;
+            });
+            const cancelButton = document.getElementById('settingsCancelButton');
+            const saveButton = document.getElementById('settingsEditButton');
+            if (cancelButton) cancelButton.classList.toggle('hidden', !isEditing);
+            if (saveButton) saveButton.textContent = isEditing ? t('settingsSaveButton') : t('settingsEditButton');
+        }
+
+        function setSettingsMainTab(tab) {
+            currentProviderSettingsTab = tab === 'staff' ? 'staff' : 'tax';
+            const taxTab = document.getElementById('settingsMainTabTax');
+            const staffTab = document.getElementById('settingsMainTabStaff');
+            const taxSection = document.getElementById('providerSettingsTaxSection');
+            const staffSection = document.getElementById('providerStaffSection');
+            if (taxTab) taxTab.classList.toggle('active', currentProviderSettingsTab === 'tax');
+            if (staffTab) staffTab.classList.toggle('active', currentProviderSettingsTab === 'staff');
+            if (taxSection) taxSection.classList.toggle('hidden', currentProviderSettingsTab !== 'tax');
+            if (staffSection) staffSection.classList.toggle('hidden', currentProviderSettingsTab !== 'staff');
         }
 
         function setSettingsAddressMode(mode) {
@@ -1797,7 +1972,7 @@
 
         function fillProviderSettingsForm(settings = {}) {
             providerSettings = settings;
-            setVatRegistered(Boolean(settings.vat_registered));
+            setVatStatus(settings.vat_registered ? 'registered' : 'not_registered');
             document.getElementById('settingsTaxId').value = settings.tax_id || '';
             document.getElementById('settingsTaxName').value = settings.tax_name || '';
             document.getElementById('settingsCompanyName').value = settings.company_name || '';
@@ -1810,6 +1985,21 @@
             document.getElementById('settingsCustomTaxAddress').value = settings.custom_tax_address || '';
             document.getElementById('settingsNote').value = settings.note || '';
             setSettingsAddressMode(settings.address_mode || 'registered');
+            setProviderSettingsEditMode(false);
+        }
+
+        function cancelProviderSettingsEdit() {
+            fillProviderSettingsForm(providerSettings || {});
+            setProviderSettingsEditMode(false);
+        }
+
+        function handleProviderSettingsFormSubmit(event) {
+            if (!providerSettingsEditMode) {
+                event.preventDefault();
+                setProviderSettingsEditMode(true);
+                return;
+            }
+            return saveProviderSettings(event);
         }
 
         async function loadProviderSettings() {
@@ -1834,7 +2024,7 @@
             event.preventDefault();
             const branchNumber = document.getElementById('settingsBranchNumber').value.trim() || document.getElementById('settingsBranchNumberAlt').value.trim();
             const payload = {
-                vat_registered: document.getElementById('settingsVatRegistered').value === 'true',
+                vat_registered: document.getElementById('settingsVatStatus').value === 'registered',
                 tax_id: document.getElementById('settingsTaxId').value.trim(),
                 tax_name: document.getElementById('settingsTaxName').value.trim(),
                 company_name: document.getElementById('settingsCompanyName').value.trim(),
@@ -1863,6 +2053,7 @@
                 }
                 const data = await response.json();
                 fillProviderSettingsForm(data.settings || payload);
+                setProviderSettingsEditMode(false);
                 showMessage(window.EcomI18n.getLanguage() === 'th' ? '✅ บันทึกการตั้งค่าเรียบร้อยแล้ว' : '✅ Settings saved successfully!', 'success');
             } catch (error) {
                 showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
@@ -2586,7 +2777,7 @@
             };
 
             try {
-                const response = await fetch(`${API_BASE}/api/provider/products`, {
+                const response = await fetch(`${API_BASE}/api/provider/products${params.toString() ? `?${params.toString()}` : ''}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2763,9 +2954,9 @@
                                                 <td class="px-6 py-5">${renderProductImageCell(p.image_url, p.name)}</td>
                                                 <td class="px-6 py-5">
                                                     <div class="font-medium text-black">${p.name}</div>
-                                                    <div class="mt-1 text-xs text-neutral-500">${p.description || '-'}</div>
+                                                    <div class="mt-1 text-xs text-neutral-500">${p.description || "-"}</div>
                                                 </td>
-                                                <td class="px-6 py-5 text-neutral-600">${p.provider_name || p.provider_id || '-'}</td>
+                                                <td class="px-6 py-5 text-neutral-600">${p.provider_name || p.provider_id || "-"}</td>
                                                 <td class="px-6 py-5 text-neutral-600">${p.sku}</td>
                                                 <td class="px-6 py-5">
                                                     <span class="inline-flex rounded-full border border-black/10 bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">${p.category}</span>
@@ -2807,10 +2998,27 @@
 
                 if (response.ok) {
                     const data = await response.json();
+                    const soldUnits = Array.isArray(data.sales_by_product)
+                        ? data.sales_by_product.reduce((sum, item) => sum + Number(item.sales || 0), 0)
+                        : 0;
+                    const lowStockCount = Array.isArray(data.low_stock_items) ? data.low_stock_items.length : 0;
+                    const avgOrderValue = Number(data.total_orders || 0) > 0
+                        ? Number(data.total_revenue || 0) / Number(data.total_orders || 0)
+                        : 0;
                     document.getElementById('productCount').textContent = data.total_products;
                     document.getElementById('stockCount').textContent = data.total_categories ?? 0;
                     document.getElementById('revenue').textContent = '$' + (data.total_revenue || 0).toFixed(2);
                     document.getElementById('orderCount').textContent = data.total_orders;
+                    const totalStockEl = document.getElementById('dashboardTotalStock');
+                    const soldUnitsEl = document.getElementById('dashboardSoldUnits');
+                    const lowStockEl = document.getElementById('dashboardLowStockCount');
+                    const ordersTodayEl = document.getElementById('dashboardOrdersToday');
+                    const avgOrderValueEl = document.getElementById('dashboardAvgOrderValue');
+                    if (totalStockEl) totalStockEl.textContent = String(data.total_stock ?? 0);
+                    if (soldUnitsEl) soldUnitsEl.textContent = String(soldUnits);
+                    if (lowStockEl) lowStockEl.textContent = String(lowStockCount);
+                    if (ordersTodayEl) ordersTodayEl.textContent = String(data.orders_today ?? 0);
+                    if (avgOrderValueEl) avgOrderValueEl.textContent = '$' + avgOrderValue.toFixed(2);
                     updateDashboardPeriodLabel(monthValue, effectiveYear);
                 }
             } catch (error) {
@@ -2932,17 +3140,17 @@
                                             <td class="px-6 py-5 text-neutral-500">${index + 1}</td>
                                             <td class="px-6 py-5 text-neutral-600">${formatDate(entry.created_at)}</td>
                                             <td class="px-6 py-5">
-                                                <div class="font-medium text-black">${entry.invoice_number || '-'}</div>
+                                                <div class="font-medium text-black">${entry.invoice_number || "-"}</div>
                                             </td>
                                             <td class="px-6 py-5">
-                                                <div class="font-medium text-black">${entry.customer_name || '-'}</div>
-                                                <div class="text-xs text-neutral-500">${entry.customer_email || ''}</div>
+                                                <div class="font-medium text-black">${entry.customer_name || "-"}</div>
+                                                <div class="text-xs text-neutral-500">${entry.customer_email || ""}</div>
                                             </td>
                                             <td class="px-6 py-5">
-                                                <span class="${getStatusBadgeClass(entry.payment_status)}">${entry.payment_status || '-'}</span>
+                                                <span class="${getStatusBadgeClass(entry.payment_status)}">${entry.payment_status || "-"}</span>
                                             </td>
                                             <td class="px-6 py-5 text-neutral-600">${formatPaymentMethod(entry.payment_history?.[entry.payment_history.length - 1]?.channel)}</td>
-                                            <td class="px-6 py-5 text-neutral-600">${entry.category || '-'}</td>
+                                            <td class="px-6 py-5 text-neutral-600">${entry.category || "-"}</td>
                                             <td class="px-6 py-5 font-medium text-black">${formatCurrency(entry.grand_total || entry.provider_total)}</td>
                                             <td class="px-6 py-5">
                                                 <button class="rounded-full border border-black bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-neutral-800" onclick="openSalesBill('${entry.order_id}')">
@@ -3059,8 +3267,8 @@
                         <div>
                             <div class="text-sm text-neutral-500">รหัสบิล</div>
                             <div class="mt-1 flex flex-wrap items-center gap-3 text-3xl font-semibold tracking-tight text-black">
-                                <span>${currentSalesBill.invoice_number || '-'}</span>
-                                <span class="text-2xl text-neutral-400">${currentSalesBill.receipt_number || '-'}</span>
+                                <span>${currentSalesBill.invoice_number || "-"}</span>
+                                <span class="text-2xl text-neutral-400">${currentSalesBill.receipt_number || "-"}</span>
                             </div>
                         </div>
                     </div>
@@ -3081,14 +3289,14 @@
                                 ${currentSalesBill.items.map((item, index) => `
                                     <tr>
                                         <td class="px-5 py-4 text-neutral-500">${index + 1}</td>
-                                        <td class="px-5 py-4 text-neutral-600">${currentSalesBill.receipt_number || '-'}</td>
+                                        <td class="px-5 py-4 text-neutral-600">${currentSalesBill.receipt_number || "-"}</td>
                                         <td class="px-5 py-4">
                                             <div class="text-xs text-neutral-400">${formatDate(currentSalesBill.created_at)}</div>
                                             <div class="mt-1 flex items-center gap-3">
                                                 ${renderProductImageCell(item.image_url, item.product_name)}
                                                 <div>
                                                     <div class="font-medium text-black">${item.product_name}</div>
-                                                    <div class="text-xs text-neutral-500">${item.category || '-'}</div>
+                                                    <div class="text-xs text-neutral-500">${item.category || "-"}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -3144,8 +3352,8 @@
                                     <tr>
                                         <td class="px-4 py-4 text-neutral-500">${currentSalesBill.payment_history.length - index}</td>
                                         <td class="px-4 py-4">
-                                            <div class="font-medium text-black">${currentSalesBill.receipt_number || '-'}</div>
-                                            <div class="text-xs text-neutral-500">เมื่อ: ${payment.timestamp ? formatDate(payment.timestamp) : '-'}</div>
+                                            <div class="font-medium text-black">${currentSalesBill.receipt_number || "-"}</div>
+                                            <div class="text-xs text-neutral-500">เมื่อ: ${payment.timestamp ? formatDate(payment.timestamp) : "-"}</div>
                                             <div class="text-xs text-neutral-500">ลงวันที่: ${formatShortDate(payment.timestamp || currentSalesBill.created_at)}</div>
                                         </td>
                                         <td class="px-4 py-4">
