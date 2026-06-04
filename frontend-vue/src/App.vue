@@ -35,6 +35,13 @@
               </button>
               <button
                 class="border-b-2 px-6 py-5 text-lg font-semibold transition"
+                :class="workspaceTab === 'ai' ? 'border-red-500 text-red-500' : 'border-transparent text-ink/55 hover:text-ink'"
+                @click="workspaceTab = 'ai'"
+              >
+                AI วิเคราะห์
+              </button>
+              <button
+                class="border-b-2 px-6 py-5 text-lg font-semibold transition"
                 :class="workspaceTab === 'storefront' ? 'border-red-500 text-red-500' : 'border-transparent text-ink/55 hover:text-ink'"
                 @click="workspaceTab = 'storefront'"
               >
@@ -176,7 +183,144 @@
               </article>
             </section>
 
-            <section v-if="workspaceTab === 'storefront'" class="space-y-6">
+            <section v-else-if="workspaceTab === 'ai'" class="space-y-6">
+              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
+                <div class="panel-header">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">AI Insights</p>
+                    <h2 class="mt-2 text-2xl font-semibold">AI วิเคราะห์ร้านแบบอ่านง่าย</h2>
+                  </div>
+                  <SparklesIcon class="h-6 w-6 text-white/55" />
+                </div>
+
+                <div class="mb-6 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                  <div>
+                    <label class="label">เลือก Provider</label>
+                    <select v-model="aiFilters.providerId" class="field">
+                      <option value="">ทุก provider</option>
+                      <option v-for="provider in providers" :key="provider.provider_id" :value="provider.provider_id">
+                        {{ provider.provider_name }}
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="label">เลือกวัน</label>
+                    <input v-model="aiFilters.day" class="field" type="date" />
+                  </div>
+                  <div>
+                    <label class="label">เลือกเดือน / ปี</label>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <select v-model="aiFilters.month" class="field">
+                        <option value="">ทุกเดือน</option>
+                        <option v-for="option in monthOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                      </select>
+                      <select v-model="aiFilters.year" class="field">
+                        <option value="">ทุกปี</option>
+                        <option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-6 flex flex-wrap gap-3">
+                  <button class="button-primary" type="button" @click="applyAiFilters">วิเคราะห์ข้อมูล</button>
+                  <button class="button-secondary" type="button" @click="resetAiFilters">ล้างตัวกรอง</button>
+                </div>
+
+                <div class="grid gap-4 xl:grid-cols-2">
+                  <article v-for="insight in aiInsightCards" :key="insight.title" class="ai-insight-card">
+                    <div class="flex items-start justify-between gap-4">
+                      <div>
+                        <p class="text-xs uppercase tracking-[0.22em] text-white/35">{{ insight.group }}</p>
+                        <h3 class="mt-2 text-xl font-semibold text-white">{{ insight.title }}</h3>
+                      </div>
+                      <span class="chip">{{ insight.status }}</span>
+                    </div>
+                    <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                      <div class="rounded-[1.2rem] border border-white/10 bg-black/25 p-4">
+                        <p class="text-xs uppercase tracking-[0.18em] text-white/35">ดูอะไร</p>
+                        <p class="mt-2 text-sm leading-6 text-white/70">{{ insight.what }}</p>
+                      </div>
+                      <div class="rounded-[1.2rem] border border-white/10 bg-black/25 p-4">
+                        <p class="text-xs uppercase tracking-[0.18em] text-white/35">เอาไปใช้ทำอะไร</p>
+                        <p class="mt-2 text-sm leading-6 text-white/70">{{ insight.action }}</p>
+                      </div>
+                    </div>
+                    <p class="mt-5 text-base leading-7 text-white/85">{{ insight.summary }}</p>
+                  </article>
+                </div>
+              </article>
+
+              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
+                <div class="panel-header">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">AI Recommendations</p>
+                    <h2 class="mt-2 text-2xl font-semibold">สิ่งที่ควรทำต่อ</h2>
+                  </div>
+                  <LightBulbIcon class="h-6 w-6 text-white/55" />
+                </div>
+
+                <div class="grid gap-4 lg:grid-cols-[1fr_1fr]">
+                  <div class="space-y-3">
+                    <div v-for="(item, index) in aiRecommendedActions" :key="item" class="flex gap-4 rounded-[1.4rem] border border-white/10 bg-white/[0.025] p-4">
+                      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-black">{{ index + 1 }}</div>
+                      <p class="text-sm leading-6 text-white/75">{{ item }}</p>
+                    </div>
+                  </div>
+
+                  <div class="rounded-[1.4rem] border border-white/10 bg-white/[0.025] p-4">
+                    <label class="label">ถาม AI จากข้อมูลร้าน</label>
+                    <textarea v-model="aiQuestion" class="field min-h-[110px]" placeholder="เช่น เดือนนี้ควรโปรโมทสินค้าอะไร หรือ provider ไหนควรติดตาม"></textarea>
+                    <div class="mt-4 rounded-[1.2rem] border border-white/10 bg-black/25 p-4">
+                      <p class="text-xs uppercase tracking-[0.18em] text-white/35">คำตอบจากข้อมูลตอนนี้</p>
+                      <p class="mt-2 text-sm leading-6 text-white/75">{{ aiQuestionAnswer }}</p>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
+                <div class="panel-header">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.22em] text-white/40">AI Detail Table</p>
+                    <h2 class="mt-2 text-2xl font-semibold">อันดับสินค้าที่ AI ใช้วิเคราะห์</h2>
+                  </div>
+                  <ChartBarIcon class="h-6 w-6 text-white/55" />
+                </div>
+
+                <div v-if="aiTopProducts.length" class="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/[0.025]">
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-white/10 text-sm">
+                      <thead class="bg-white/[0.05] text-left text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
+                        <tr>
+                          <th class="px-5 py-4">สินค้า</th>
+                          <th class="px-5 py-4">หมวด</th>
+                          <th class="px-5 py-4">จำนวนขาย</th>
+                          <th class="px-5 py-4">ยอดขาย</th>
+                          <th class="px-5 py-4">สต็อกปัจจุบัน</th>
+                          <th class="px-5 py-4">AI แนะนำ</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-white/5 bg-transparent">
+                        <tr v-for="product in aiTopProducts" :key="product.id" class="transition hover:bg-white/[0.03]">
+                          <td class="px-5 py-4 font-medium text-white">{{ product.name }}</td>
+                          <td class="px-5 py-4 text-white/60">{{ product.category || '-' }}</td>
+                          <td class="px-5 py-4 text-white/70">{{ product.quantity }}</td>
+                          <td class="px-5 py-4 font-medium text-white">{{ money(product.revenue) }}</td>
+                          <td class="px-5 py-4 text-white/70">{{ product.stock }}</td>
+                          <td class="px-5 py-4 text-white/65">{{ product.advice }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div v-else class="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-white/40">
+                  ยังไม่มีออเดอร์ในช่วงที่เลือกสำหรับวิเคราะห์
+                </div>
+              </article>
+            </section>
+
+            <section v-else-if="workspaceTab === 'storefront'" class="space-y-6">
               <article class="rounded-[2rem] border border-white/10 bg-black/20 p-6">
                 <div class="panel-header">
                   <div>
@@ -601,11 +745,12 @@
 <script>
 import {
   ArchiveBoxIcon,
+  ChartBarIcon,
   ChevronRightIcon,
   ClipboardDocumentListIcon,
-  CreditCardIcon,
+  LightBulbIcon,
   MegaphoneIcon,
-  ShoppingBagIcon,
+  SparklesIcon,
   UserCircleIcon
 } from "@heroicons/vue/24/outline";
 import { useAppStore } from "./stores/app";
@@ -634,9 +779,12 @@ export default {
   name: "App",
   components: {
     ArchiveBoxIcon,
+    ChartBarIcon,
     ChevronRightIcon,
     ClipboardDocumentListIcon,
+    LightBulbIcon,
     MegaphoneIcon,
+    SparklesIcon,
     UserCircleIcon
   },
   data() {
@@ -661,7 +809,14 @@ export default {
         day: "",
         month: "",
         year: ""
-      }
+      },
+      aiFilters: {
+        providerId: "",
+        day: "",
+        month: "",
+        year: ""
+      },
+      aiQuestion: "เดือนนี้ควรโฟกัสเรื่องอะไรเป็นอันดับแรก"
     };
   },
   computed: {
@@ -768,6 +923,178 @@ export default {
           note: Math.round(stats.paidRate) + "% paid rate"
         }
       ];
+    },
+    aiFilteredOrders() {
+      return this.filterOrders(this.orders, this.aiFilters);
+    },
+    aiMetrics() {
+      const orders = this.aiFilteredOrders;
+      const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+      const pendingOrders = orders.filter((order) => String(order.payment_status || "").toLowerCase().includes("pending")).length;
+      const paidOrders = orders.filter((order) => this.isPaidStatus(order.payment_status)).length;
+      const lowStockProducts = this.products.filter((product) => Number(product.stock || 0) <= 5).length;
+      return {
+        orders: orders.length,
+        totalRevenue,
+        avgOrderValue: orders.length ? totalRevenue / orders.length : 0,
+        pendingOrders,
+        paidOrders,
+        paidRate: orders.length ? (paidOrders / orders.length) * 100 : 0,
+        lowStockProducts
+      };
+    },
+    aiProductRows() {
+      const productMap = new Map();
+      this.products.forEach((product) => {
+        productMap.set(String(product.id), {
+          id: String(product.id),
+          name: product.name || "Unknown product",
+          category: product.category || "-",
+          stock: Number(product.stock || 0),
+          quantity: 0,
+          revenue: 0
+        });
+      });
+
+      this.aiFilteredOrders.forEach((order) => {
+        (order.items || []).forEach((item) => {
+          const id = String(item.productId || item.product_id || item.name || "unknown");
+          const row = productMap.get(id) || {
+            id,
+            name: item.name || "Unknown product",
+            category: item.category || "-",
+            stock: "-",
+            quantity: 0,
+            revenue: 0
+          };
+          row.quantity += Number(item.quantity || 0);
+          row.revenue += Number(item.lineTotal || Number(item.quantity || 0) * Number(item.price || 0));
+          productMap.set(id, row);
+        });
+      });
+
+      return Array.from(productMap.values()).filter((row) => row.quantity > 0 || Number(row.stock) <= 5);
+    },
+    aiTopProducts() {
+      return this.aiProductRows
+        .map((row) => ({
+          ...row,
+          advice: Number(row.stock) <= 5
+            ? "ควรเติมสต็อกก่อนเสียโอกาสขาย"
+            : row.quantity > 0
+              ? "มีแรงขาย ใช้ทำโปรโมชันต่อได้"
+              : "ยังไม่เร่งด่วน"
+        }))
+        .sort((a, b) => Number(b.revenue || 0) - Number(a.revenue || 0))
+        .slice(0, 8);
+    },
+    aiTopProvider() {
+      const providerRevenue = new Map();
+      this.aiFilteredOrders.forEach((order) => {
+        const providerIds = this.getOrderProviderIds(order);
+        const splitRevenue = providerIds.length ? Number(order.total || 0) / providerIds.length : Number(order.total || 0);
+        providerIds.forEach((providerId) => {
+          providerRevenue.set(providerId, Number(providerRevenue.get(providerId) || 0) + splitRevenue);
+        });
+      });
+      const topEntry = Array.from(providerRevenue.entries()).sort((a, b) => b[1] - a[1])[0];
+      if (!topEntry) return { name: "-", revenue: 0 };
+      const provider = this.providers.find((entry) => entry.provider_id === topEntry[0]);
+      return { name: provider?.provider_name || topEntry[0], revenue: topEntry[1] };
+    },
+    aiBestProduct() {
+      return this.aiTopProducts.find((product) => product.quantity > 0) || null;
+    },
+    aiInsightCards() {
+      const metrics = this.aiMetrics;
+      const bestProduct = this.aiBestProduct;
+      const lowStockProduct = this.aiTopProducts.find((product) => Number(product.stock) <= 5);
+      const topProvider = this.aiTopProvider;
+      return [
+        {
+          group: "Sales",
+          title: "ยอดขายช่วงที่เลือก",
+          status: metrics.orders ? "มีข้อมูล" : "รอข้อมูล",
+          what: "ดูจำนวนออเดอร์ ยอดขายรวม และค่าเฉลี่ยต่อบิลจากตัวกรองด้านบน",
+          action: metrics.orders ? "ใช้เช็กว่าช่วงนี้ร้านเดินดีไหม และควรเร่งยอดเพิ่มหรือรักษาระดับเดิม" : "ยังไม่มีออเดอร์ในช่วงนี้ ลองเปลี่ยนวัน เดือน ปี หรือ provider",
+          summary: metrics.orders
+            ? `มี ${metrics.orders} ออเดอร์ ยอดรวม ${this.money(metrics.totalRevenue)} ค่าเฉลี่ยต่อบิล ${this.money(metrics.avgOrderValue)}`
+            : "ยังไม่พบยอดขายในช่วงที่เลือก"
+        },
+        {
+          group: "Stock",
+          title: "สินค้าที่ควรเติม",
+          status: lowStockProduct ? "ควรดู" : "ปกติ",
+          what: "ดูสินค้าที่สต็อกต่ำและสินค้าที่มีแรงขายในช่วงที่เลือก",
+          action: lowStockProduct ? "เติมสินค้าที่ขายได้และสต็อกต่ำก่อน เพื่อไม่ให้เสียยอดขาย" : "ยังไม่เห็นสินค้าเสี่ยงหมดชัดเจน ตรวจซ้ำหลังมีออเดอร์เพิ่ม",
+          summary: lowStockProduct
+            ? `${lowStockProduct.name} เหลือ ${lowStockProduct.stock} ชิ้น และมีข้อมูลขาย ${lowStockProduct.quantity} ชิ้น`
+            : `มีสินค้าใกล้หมด ${metrics.lowStockProducts} รายการจากคลังทั้งหมด`
+        },
+        {
+          group: "Order Follow-up",
+          title: "ออเดอร์ที่ควรติดตาม",
+          status: metrics.pendingOrders ? "ต้องตาม" : "เรียบร้อย",
+          what: "ดูบิลที่ยัง pending หรือยังไม่จบ flow การชำระเงิน",
+          action: metrics.pendingOrders ? "ติดตามการชำระหรือสลิปก่อน เพื่อให้ยอดไม่ค้างในระบบ" : "ยังไม่มีบิล pending ในช่วงนี้",
+          summary: metrics.pendingOrders
+            ? `มี ${metrics.pendingOrders} ออเดอร์ที่ยัง pending คิดเป็น ${Math.round(100 - metrics.paidRate)}% ของช่วงนี้`
+            : `อัตราชำระสำเร็จ ${Math.round(metrics.paidRate)}% ในช่วงที่เลือก`
+        },
+        {
+          group: "Provider",
+          title: "Provider ที่ทำผลงานเด่น",
+          status: topProvider.revenue ? "พบอันดับ" : "รอข้อมูล",
+          what: "ดู provider ที่สร้างยอดขายสูงสุดในช่วงที่เลือก",
+          action: topProvider.revenue ? "ใช้คุยเรื่องสต็อก โปรโมชัน หรือขยายสินค้าที่ขายดี" : "ยังไม่มี provider เด่นจากตัวกรองนี้",
+          summary: topProvider.revenue
+            ? `${topProvider.name} ทำยอดประมาณ ${this.money(topProvider.revenue)} ในช่วงนี้`
+            : "ยังไม่พบยอดขายแยก provider"
+        }
+      ];
+    },
+    aiRecommendedActions() {
+      const actions = [];
+      const metrics = this.aiMetrics;
+      const bestProduct = this.aiBestProduct;
+      const lowStockProduct = this.aiTopProducts.find((product) => Number(product.stock) <= 5);
+      if (lowStockProduct) {
+        actions.push(`เติมสต็อก ${lowStockProduct.name} ก่อน เพราะเหลือ ${lowStockProduct.stock} ชิ้น`);
+      }
+      if (bestProduct) {
+        actions.push(`ลองทำโปรโมชันกับ ${bestProduct.name} เพราะเป็นสินค้าที่มียอดขายเด่นในช่วงนี้`);
+      }
+      if (metrics.pendingOrders) {
+        actions.push(`ติดตาม ${metrics.pendingOrders} ออเดอร์ pending เพื่อปิดยอดขายให้เร็วขึ้น`);
+      }
+      if (this.aiTopProvider.revenue) {
+        actions.push(`คุยกับ ${this.aiTopProvider.name} เรื่องสินค้าขายดีและแผนเติมของ`);
+      }
+      if (!actions.length) {
+        actions.push("ข้อมูลช่วงนี้ยังน้อย แนะนำให้ดูภาพรวมทุก provider ก่อน แล้วค่อยกรองลึกลงมา");
+      }
+      return actions.slice(0, 4);
+    },
+    aiQuestionAnswer() {
+      const question = String(this.aiQuestion || "").toLowerCase();
+      const bestProduct = this.aiBestProduct;
+      const lowStockProduct = this.aiTopProducts.find((product) => Number(product.stock) <= 5);
+      if (question.includes("สินค้า") || question.includes("โปรโมท") || question.includes("โปรโมชัน")) {
+        return bestProduct
+          ? `ควรเริ่มจาก ${bestProduct.name} เพราะมีจำนวนขาย ${bestProduct.quantity} ชิ้น และทำยอด ${this.money(bestProduct.revenue)} ในช่วงที่เลือก`
+          : "ยังไม่มีสินค้าขายเด่นในตัวกรองนี้ ลองเปลี่ยนช่วงเวลาเป็นทั้งเดือนหรือดูทุก provider";
+      }
+      if (question.includes("สต็อก") || question.includes("เติม")) {
+        return lowStockProduct
+          ? `ควรเติม ${lowStockProduct.name} ก่อน เพราะสต็อกเหลือ ${lowStockProduct.stock} ชิ้น`
+          : "ยังไม่มีสินค้าเสี่ยงหมดชัดเจนในข้อมูลชุดนี้";
+      }
+      if (question.includes("provider") || question.includes("ร้าน")) {
+        return this.aiTopProvider.revenue
+          ? `${this.aiTopProvider.name} เป็น provider ที่เด่นสุดในช่วงนี้ ทำยอดประมาณ ${this.money(this.aiTopProvider.revenue)}`
+          : "ยังไม่มี provider ที่เด่นพอจากตัวกรองนี้";
+      }
+      return this.aiRecommendedActions[0] || "เริ่มจากดูยอดขายรวม สต็อกต่ำ และออเดอร์ pending ก่อน จะเห็นงานที่ควรทำเร็วที่สุด";
     }
   },
   async mounted() {
@@ -905,6 +1232,17 @@ export default {
         month: "",
         year: ""
       };
+    },
+    resetAiFilters() {
+      this.aiFilters = {
+        providerId: "",
+        day: "",
+        month: "",
+        year: ""
+      };
+    },
+    applyAiFilters() {
+      return this.aiFilteredOrders.length;
     },
     applyOrderFilters() {
       return this.filteredOrders.length;

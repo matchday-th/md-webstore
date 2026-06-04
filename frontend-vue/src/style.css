@@ -10,6 +10,10 @@
   ::selection {
     @apply bg-white text-black;
   }
+
+  .ai-insight-card {
+    @apply rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm;
+  }
 }
 
 @layer components {
@@ -59,5 +63,9 @@
 
   .admin-dashboard-card .value {
     @apply mt-4 text-3xl font-semibold tracking-tight text-white;
+  }
+
+  .ai-insight-card {
+    @apply rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm;
   }
 }
