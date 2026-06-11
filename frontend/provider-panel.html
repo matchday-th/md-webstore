@@ -3031,8 +3031,27 @@
             }
         }
 
+        function setDashboardLoading() {
+            const loadingText = window.EcomI18n.getLanguage() === 'th' ? 'กำลังโหลด...' : 'Loading...';
+            document.getElementById('productCount').textContent = loadingText;
+            document.getElementById('stockCount').textContent = loadingText;
+            document.getElementById('revenue').textContent = loadingText;
+            document.getElementById('orderCount').textContent = loadingText;
+            const totalStockEl = document.getElementById('dashboardTotalStock');
+            const soldUnitsEl = document.getElementById('dashboardSoldUnits');
+            const lowStockEl = document.getElementById('dashboardLowStockCount');
+            const ordersTodayEl = document.getElementById('dashboardOrdersToday');
+            const avgOrderValueEl = document.getElementById('dashboardAvgOrderValue');
+            if (totalStockEl) totalStockEl.textContent = loadingText;
+            if (soldUnitsEl) soldUnitsEl.textContent = loadingText;
+            if (lowStockEl) lowStockEl.textContent = loadingText;
+            if (ordersTodayEl) ordersTodayEl.textContent = loadingText;
+            if (avgOrderValueEl) avgOrderValueEl.textContent = loadingText;
+        }
+
         async function loadDashboard() {
             try {
+                setDashboardLoading();
                 const monthValue = document.getElementById('dashboardMonthFilter')?.value || '';
                 const selectedYear = document.getElementById('dashboardYearFilter')?.value || '';
                 const effectiveYear = selectedYear || (monthValue ? String(new Date().getFullYear()) : '');
