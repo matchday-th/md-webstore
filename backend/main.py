@@ -2004,9 +2004,11 @@ async def provider_sales_history(
     month: Optional[int] = None,
     year: Optional[int] = None,
     category: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     current_user: str = Depends(get_current_user)
 ):
-    """Provider: Get bill-style sales history filtered by day/month/year/category."""
+    """Provider: Get bill-style sales history filtered by day/month/year/category with pagination."""
     context = await get_provider_access_context(current_user, "sales_history")
     owner_provider_id = context["owner_provider_id"]
     provider_scopes = await get_provider_scopes(current_user)
@@ -2023,7 +2025,13 @@ async def provider_sales_history(
         ]
     }
     attach_period_filter(query, "created_at", day=day, month=month, year=year)
-    orders = await db.db["orders"].find(query).sort("created_at", -1).to_list(None)
+    
+    # Get total count before pagination
+    total_count = await db.db["orders"].count_documents(query)
+    
+    # Apply pagination
+    skip = (page - 1) * page_size
+    orders = await db.db["orders"].find(query).sort("created_at", -1).skip(skip).limit(page_size).to_list(None)
 
     normalized_category = (category or "").strip().lower()
     bills = []
@@ -2132,7 +2140,16 @@ async def provider_sales_history(
             "payment_history": payment_history,
         })
 
-    return {"history": bills}
+    return {
+        "history": bills,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": (total_count + page_size - 1) // page_size if total_count > 0 else 1,
+        }
+    }
+
 
 
 @app.post("/api/provider/orders/{order_id}/actions")
@@ -2256,9 +2273,11 @@ async def provider_restock_history(
     month: Optional[int] = None,
     year: Optional[int] = None,
     category: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     current_user: str = Depends(get_current_user)
 ):
-    """Provider: Get restock history filtered by day/month/year/category."""
+    """Provider: Get restock history filtered by day/month/year/category with pagination."""
     await get_provider_access_context(current_user, "restock_history")
     provider_scopes = await get_provider_scopes(current_user)
     products = await db.db["products"].find(
@@ -2273,7 +2292,13 @@ async def provider_restock_history(
         "quantity_changed": {"$gt": 0},
     }
     attach_period_filter(query, "timestamp", day=day, month=month, year=year)
-    logs = await db.db["inventory_logs"].find(query).sort("timestamp", -1).to_list(None)
+    
+    # Get total count before pagination
+    total_count = await db.db["inventory_logs"].count_documents(query)
+    
+    # Apply pagination
+    skip = (page - 1) * page_size
+    logs = await db.db["inventory_logs"].find(query).sort("timestamp", -1).skip(skip).limit(page_size).to_list(None)
 
     normalized_category = (category or "").strip().lower()
     history = []
@@ -2299,10 +2324,16 @@ async def provider_restock_history(
             "timestamp": log.get("timestamp").isoformat() if log.get("timestamp") else None,
         })
 
-    return {"history": history}
+    return {
+        "history": history,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": (total_count + page_size - 1) // page_size if total_count > 0 else 1,
+        }
+    }
 
-
-@app.get("/api/provider/slip-reviews")
 async def provider_slip_reviews(current_user: str = Depends(get_current_user)):
     """Provider: Review pending payment slips for assigned orders."""
     await get_provider_access_context(current_user, "settings")

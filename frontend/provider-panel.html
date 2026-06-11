@@ -622,7 +622,7 @@
                             </div>
                             <div>
                                 <label id="salesYearLabel">Year</label>
-                                <select id="salesYearFilter"></select>
+                                <select id="salesYearFilter" onchange="syncYearFilters('salesYearFilter')"></select>
                             </div>
                             <div>
                                 <label id="salesCategoryLabel">Category</label>
@@ -666,7 +666,7 @@
                             </div>
                             <div>
                                 <label id="restockYearLabel">Year</label>
-                                <select id="restockYearFilter"></select>
+                                <select id="restockYearFilter" onchange="syncYearFilters('restockYearFilter')"></select>
                             </div>
                             <div>
                                 <label id="restockCategoryLabel">Category</label>
@@ -1115,6 +1115,10 @@
         let currentProviderProfile = null;
         let providerStaffAccounts = [];
         let currentEditingStaffId = null;
+        
+        // Pagination state
+        let salesHistoryPagination = { page: 1, page_size: 10, total_count: 0, total_pages: 1 };
+        let restockHistoryPagination = { page: 1, page_size: 10, total_count: 0, total_pages: 1 };
 
         const translations = {
             en: {
@@ -1764,7 +1768,28 @@
             }
 
             if (categoryValue) params.set('category', categoryValue);
+            
+            // Add pagination parameters
+            const paginationState = prefix === 'sales' ? salesHistoryPagination : restockHistoryPagination;
+            params.set('page', paginationState.page);
+            params.set('page_size', paginationState.page_size);
+            
             return params;
+        }
+        
+        function syncYearFilters(sourceId) {
+            const sourceElement = document.getElementById(sourceId);
+            if (!sourceElement) return;
+            
+            const yearValue = sourceElement.value;
+            const otherFilterIds = ['salesYearFilter', 'restockYearFilter'].filter(id => id !== sourceId);
+            
+            otherFilterIds.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = yearValue;
+                }
+            });
         }
 
         function resetHistoryFilters(prefix) {
@@ -1772,9 +1797,13 @@
             document.getElementById(`${prefix}MonthFilter`).value = '';
             document.getElementById(`${prefix}YearFilter`).value = '';
             document.getElementById(`${prefix}CategoryFilter`).value = '';
+            
+            // Reset pagination
             if (prefix === 'sales') {
+                salesHistoryPagination = { page: 1, page_size: 10, total_count: 0, total_pages: 1 };
                 loadSalesHistory();
             } else {
+                restockHistoryPagination = { page: 1, page_size: 10, total_count: 0, total_pages: 1 };
                 loadRestockHistory();
             }
         }
@@ -3107,6 +3136,16 @@
 
                 const data = await response.json();
                 salesHistory = data.history || [];
+                
+                // Update pagination state
+                if (data.pagination) {
+                    salesHistoryPagination = {
+                        page: data.pagination.page,
+                        page_size: data.pagination.page_size,
+                        total_count: data.pagination.total_count,
+                        total_pages: data.pagination.total_pages
+                    };
+                }
 
                 if (!salesHistory.length) {
                     document.getElementById('salesHistoryTable').innerHTML = `
@@ -3114,6 +3153,7 @@
                             <p class="text-lg font-medium text-black">${t('noSalesHistory')}</p>
                         </div>
                     `;
+                    renderSalesHistoryPagination();
                     return;
                 }
 
@@ -3137,7 +3177,7 @@
                                 <tbody class="divide-y divide-black/5 bg-white">
                                     ${salesHistory.map((entry, index) => `
                                         <tr class="transition hover:bg-neutral-50">
-                                            <td class="px-6 py-5 text-neutral-500">${index + 1}</td>
+                                            <td class="px-6 py-5 text-neutral-500">${(salesHistoryPagination.page - 1) * salesHistoryPagination.page_size + index + 1}</td>
                                             <td class="px-6 py-5 text-neutral-600">${formatDate(entry.created_at)}</td>
                                             <td class="px-6 py-5">
                                                 <div class="font-medium text-black">${entry.invoice_number || "-"}</div>
@@ -3163,13 +3203,66 @@
                             </table>
                         </div>
                     </div>
-                    <div class="mt-4 text-sm text-neutral-500">
-                        ${salesHistory.length} bills loaded
-                    </div>
                 `;
+                
+                renderSalesHistoryPagination();
             } catch (error) {
                 showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
             }
+        }
+        
+        function renderSalesHistoryPagination() {
+            const pag = salesHistoryPagination;
+            let paginationHtml = `
+                <div class="mt-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4 rounded-[20px] border border-black/10 bg-neutral-50 px-5 py-4">
+                        <div class="flex items-center gap-6">
+                            <div class="text-sm font-medium text-neutral-700">
+                                ${t('allMonths') || 'Records per page'}:
+                                <select id="salesPageSizeSelect" onchange="setSalesPageSize(this.value)" class="ml-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm font-medium">
+                                    <option value="10" ${pag.page_size === 10 ? 'selected' : ''}>10</option>
+                                    <option value="20" ${pag.page_size === 20 ? 'selected' : ''}>20</option>
+                                    <option value="50" ${pag.page_size === 50 ? 'selected' : ''}>50</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="text-sm font-medium text-neutral-700">
+                            Showing ${(pag.page - 1) * pag.page_size + 1}-${Math.min(pag.page * pag.page_size, pag.total_count)} of <strong>${pag.total_count}</strong> records
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="text-sm font-medium text-neutral-700">
+                            Page <strong>${pag.page}</strong> of <strong>${pag.total_pages}</strong>
+                        </div>
+                        <div class="flex gap-2">
+                            <button 
+                                onclick="setSalesPage(${pag.page - 1})" 
+                                ${pag.page <= 1 ? 'disabled' : ''} 
+                                class="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                            >← Previous</button>
+                            <button 
+                                onclick="setSalesPage(${pag.page + 1})" 
+                                ${pag.page >= pag.total_pages ? 'disabled' : ''} 
+                                class="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                            >Next →</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('salesHistoryTable').innerHTML += paginationHtml;
+        }
+        
+        function setSalesPage(page) {
+            if (page >= 1 && page <= salesHistoryPagination.total_pages) {
+                salesHistoryPagination.page = page;
+                loadSalesHistory();
+            }
+        }
+        
+        function setSalesPageSize(size) {
+            salesHistoryPagination.page_size = parseInt(size);
+            salesHistoryPagination.page = 1;
+            loadSalesHistory();
         }
 
         async function handleSalesBillAction(action) {
@@ -3442,6 +3535,16 @@
 
                 const data = await response.json();
                 restockHistory = data.history || [];
+                
+                // Update pagination state
+                if (data.pagination) {
+                    restockHistoryPagination = {
+                        page: data.pagination.page,
+                        page_size: data.pagination.page_size,
+                        total_count: data.pagination.total_count,
+                        total_pages: data.pagination.total_pages
+                    };
+                }
 
                 if (!restockHistory.length) {
                     document.getElementById('restockHistoryTable').innerHTML = `
@@ -3449,6 +3552,7 @@
                             <p class="text-lg font-medium text-black">${t('noRestockHistory')}</p>
                         </div>
                     `;
+                    renderRestockHistoryPagination();
                     return;
                 }
 
@@ -3486,9 +3590,65 @@
                         </div>
                     </div>
                 `;
+                
+                renderRestockHistoryPagination();
             } catch (error) {
                 showMessage(`${t('errorPrefix')} ${error.message}`, 'error');
             }
+        }
+        
+        function renderRestockHistoryPagination() {
+            const pag = restockHistoryPagination;
+            let paginationHtml = `
+                <div class="mt-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4 rounded-[20px] border border-black/10 bg-neutral-50 px-5 py-4">
+                        <div class="flex items-center gap-6">
+                            <div class="text-sm font-medium text-neutral-700">
+                                ${t('allMonths') || 'Records per page'}:
+                                <select id="restockPageSizeSelect" onchange="setRestockPageSize(this.value)" class="ml-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm font-medium">
+                                    <option value="10" ${pag.page_size === 10 ? 'selected' : ''}>10</option>
+                                    <option value="20" ${pag.page_size === 20 ? 'selected' : ''}>20</option>
+                                    <option value="50" ${pag.page_size === 50 ? 'selected' : ''}>50</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="text-sm font-medium text-neutral-700">
+                            Showing ${(pag.page - 1) * pag.page_size + 1}-${Math.min(pag.page * pag.page_size, pag.total_count)} of <strong>${pag.total_count}</strong> records
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="text-sm font-medium text-neutral-700">
+                            Page <strong>${pag.page}</strong> of <strong>${pag.total_pages}</strong>
+                        </div>
+                        <div class="flex gap-2">
+                            <button 
+                                onclick="setRestockPage(${pag.page - 1})" 
+                                ${pag.page <= 1 ? 'disabled' : ''} 
+                                class="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                            >← Previous</button>
+                            <button 
+                                onclick="setRestockPage(${pag.page + 1})" 
+                                ${pag.page >= pag.total_pages ? 'disabled' : ''} 
+                                class="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                            >Next →</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('restockHistoryTable').innerHTML += paginationHtml;
+        }
+        
+        function setRestockPage(page) {
+            if (page >= 1 && page <= restockHistoryPagination.total_pages) {
+                restockHistoryPagination.page = page;
+                loadRestockHistory();
+            }
+        }
+        
+        function setRestockPageSize(size) {
+            restockHistoryPagination.page_size = parseInt(size);
+            restockHistoryPagination.page = 1;
+            loadRestockHistory();
         }
 
         async function reviewSlip(orderId, action) {
