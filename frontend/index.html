@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD Webstore - Demo Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/frontend-assets/mock-api.js"></script>
+    <style>
+        body { font-family: "Prompt", ui-sans-serif, system-ui, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-12">
+        <div class="mb-2 inline-block rounded-full bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1">
+            DEMO - frontend-only mock, no real backend, data lives in your browser
+        </div>
+        <h1 class="text-3xl font-bold text-slate-900">MD Webstore</h1>
+        <p class="text-slate-500 mt-1 mb-8">Multi-vendor e-commerce demo. Pick a role to explore, or go through the login page like a real user.</p>
+
+        <div class="grid gap-4 sm:grid-cols-3 mb-10">
+            <button onclick="enterAs('user')" class="rounded-xl bg-white border border-slate-200 p-5 text-left hover:border-[#e21515] hover:shadow transition">
+                <div class="font-semibold text-slate-900">Shopper</div>
+                <div class="text-sm text-slate-500 mt-1">Browse products, checkout with QR, upload a payment slip</div>
+            </button>
+            <button onclick="enterAs('provider')" class="rounded-xl bg-white border border-slate-200 p-5 text-left hover:border-[#e21515] hover:shadow transition">
+                <div class="font-semibold text-slate-900">Provider</div>
+                <div class="text-sm text-slate-500 mt-1">Manage products, stock, staff and incoming orders</div>
+            </button>
+            <button onclick="enterAs('admin')" class="rounded-xl bg-white border border-slate-200 p-5 text-left hover:border-[#e21515] hover:shadow transition">
+                <div class="font-semibold text-slate-900">Admin</div>
+                <div class="text-sm text-slate-500 mt-1">Dashboard, slip approvals, providers and the studio app</div>
+            </button>
+        </div>
+
+        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">All pages</h2>
+        <ul class="space-y-2 text-slate-700">
+            <li><a class="hover:text-[#e21515] underline underline-offset-2" href="/login.html">Login / Register</a> <span class="text-slate-400 text-sm">- demo accounts: user@demo.io, provider@demo.io, admin@demo.io (password: demo1234)</span></li>
+            <li><a class="hover:text-[#e21515] underline underline-offset-2" href="/user-store.html">User Store</a></li>
+            <li><a class="hover:text-[#e21515] underline underline-offset-2" href="/order-history.html">Order History</a></li>
+            <li><a class="hover:text-[#e21515] underline underline-offset-2" href="/user-profile.html">User Profile</a></li>
+            <li><a class="hover:text-[#e21515] underline underline-offset-2" href="/provider-panel.html">Provider Panel</a></li>
+            <li><a class="hover:text-[#e21515] underline underline-offset-2" href="/admin-dashboard.html">Admin Dashboard</a></li>
+            <li><a class="hover:text-[#e21515] underline underline-offset-2" href="/studio/">Admin Studio (Vue)</a></li>
+        </ul>
+
+        <div class="mt-10 text-xs text-slate-400">
+            State persists in localStorage. <button onclick="resetDemo()" class="underline hover:text-[#e21515]">Reset demo data</button>
+        </div>
+    </div>
+
+    <script>
+        const DESTINATIONS = {
+            user: "/user-store.html",
+            provider: "/provider-panel.html",
+            admin: "/admin-dashboard.html"
+        };
+
+        function enterAs(role) {
+            if (window.MockApi && window.MockApi.loginAs) {
+                window.MockApi.loginAs(role);
+            }
+            window.location.href = DESTINATIONS[role] || "/login.html";
+        }
+
+        function resetDemo() {
+            if (window.MockApi && window.MockApi.reset) {
+                window.MockApi.reset();
+            }
+            localStorage.clear();
+            alert("Demo data reset.");
+        }
+    </script>
+</body>
+</html>

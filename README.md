@@ -2,6 +2,9 @@
 
 ระบบขายออนไลน์ครบวงจร พร้อมความปลอดภัยสูง ป้องกัน double purchase และ database flooding
 
+> **Static demo deploy:** this repo can be deployed as a frontend-only mock
+> (no MongoDB, no FastAPI) on AWS Amplify - see [DEPLOY_AMPLIFY.md](DEPLOY_AMPLIFY.md).
+
 ## 📋 Features
 
 ### ✅ Admin Dashboard

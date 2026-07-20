@@ -1,0 +1,17 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd frontend-vue && npm ci --no-audit --no-fund && cd ..
+    build:
+      commands:
+        - cd frontend-vue && npm run build && cd ..
+        - bash scripts/assemble-static.sh
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - frontend-vue/node_modules/**/*

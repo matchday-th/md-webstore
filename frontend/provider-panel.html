@@ -1095,6 +1095,7 @@
         </div>
     </div>
 
+    <script src="/frontend-assets/mock-api.js"></script>
     <script src="/frontend-assets/i18n.js"></script>
     <script>
         const protocol = window.location.protocol;
@@ -2827,7 +2828,7 @@
             };
 
             try {
-                const response = await fetch(`${API_BASE}/api/provider/products${params.toString() ? `?${params.toString()}` : ''}`, {
+                const response = await fetch(`${API_BASE}/api/provider/products`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
